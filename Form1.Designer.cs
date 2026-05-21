@@ -243,9 +243,6 @@
             this.panelCube.Name = "panelCube";
             this.panelCube.Size = new System.Drawing.Size(180, 120);
             this.panelCube.TabIndex = 17;
-            this.panelCube.Paint += new System.Windows.Forms.PaintEventHandler(this.panelCube_Paint);
-            this.panelCube.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelCube_MouseDown);
-            this.panelCube.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelCube_MouseMove);
             // 
             // Form1
             // 
