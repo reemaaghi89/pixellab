@@ -45,7 +45,7 @@
             this.btnGray = new System.Windows.Forms.Button();
             this.btnQuantize = new System.Windows.Forms.Button();
             this.btn = new System.Windows.Forms.Button();
-            
+            this.btnOpen3DLab = new System.Windows.Forms.Button();
             // تهيئة أداة البانل الجديدة للمكعب هنا
             this.panelCube = new System.Windows.Forms.Panel();
 
@@ -204,7 +204,7 @@
             this.btnGray.TabIndex = 14;
             this.btnGray.Text = "Black&White";
             this.btnGray.UseVisualStyleBackColor = true;
-            this.btnGray.Click += new System.EventHandler(this.btnGray_Click);
+            this.btnGray.Click += new System.EventHandler(this.btnConvertBlackAndWhite_Click);
             // 
             // btnQuantize
             // 
@@ -214,7 +214,7 @@
             this.btnQuantize.TabIndex = 15;
             this.btnQuantize.Text = "ReduceColors";
             this.btnQuantize.UseVisualStyleBackColor = true;
-            this.btnQuantize.Click += new System.EventHandler(this.btnQuantize_Click);
+            this.btnQuantize.Click += new System.EventHandler(this.btnQuantizeColors_Click);
             // 
             // btn
             // 
@@ -224,10 +224,20 @@
             this.btn.TabIndex = 16;
             this.btn.Text = "Gray scale";
             this.btn.UseVisualStyleBackColor = true;
-            this.btn.Click += new System.EventHandler(this.btn_Click);
+            this.btn.Click += new System.EventHandler(this.btnConvertGrayscale_Click);
             // 
             // panelCube
             // 
+            this.btnOpen3DLab.Location = new System.Drawing.Point(760, 12); // قعد فوق الأزرار تماماً وبشكل أنيق
+            this.btnOpen3DLab.Name = "btnOpen3DLab";
+            this.btnOpen3DLab.Size = new System.Drawing.Size(120, 25);
+            this.btnOpen3DLab.TabIndex = 18;
+            this.btnOpen3DLab.Text = "🚀 3D Lab";
+            this.btnOpen3DLab.UseVisualStyleBackColor = true;
+            this.btnOpen3DLab.Click += new System.EventHandler(this.btnOpen3DLab_Click);
+
+
+
             this.panelCube.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.panelCube.Location = new System.Drawing.Point(20, 532);
             this.panelCube.Name = "panelCube";
@@ -243,6 +253,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1184, 661);
+            this.Controls.Add(this.btnOpen3DLab);
             this.Controls.Add(this.panelCube); // ربط البانل بالـ Controls الخاصة بالنافذة بشكل صحيح
             this.Controls.Add(this.btn);
             this.Controls.Add(this.btnQuantize);
@@ -296,5 +307,6 @@
         
         // التصريح عن الكائن في نهاية الكلاس كما تنص معايير البيئة
         private System.Windows.Forms.Panel panelCube;
+        private System.Windows.Forms.Button btnOpen3DLab;
     }
 }
