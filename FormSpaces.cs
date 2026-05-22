@@ -24,17 +24,26 @@ namespace pixellab
         {
             InitializeComponentLayout();
             
-            // تفعيل التخزين المزدوج لمنع الوميض نهائياً أثناء التدوير والزوم
             typeof(Panel).InvokeMember("DoubleBuffered", 
                 System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic, 
                 null, panel3D, new object[] { true });
 
             panel3D.MouseWheel += Panel3D_MouseWheel;
-
-            // حساب التقرير للون الافتراضي عند الإقلاع باستخدام الـ Converters تبعتك
             UpdateSyncReport(localSelectedColor);
         }
+        public void UpdateFromForm1(Color newColor)
+        {
+            int r = Math.Max(0, Math.Min(255, (int)newColor.R));
+            int g = Math.Max(0, Math.Min(255, (int)newColor.G));
+            int b = Math.Max(0, Math.Min(255, (int)newColor.B));
 
+            this.localSelectedColor = Color.FromArgb(r, g, b); 
+            
+            this.UpdateSyncReport(this.localSelectedColor);
+            panel3D.Invalidate();
+            System.Diagnostics.Debug.WriteLine("Color received in FormSpaces!"); 
+            
+        }
         private void InitializeComponentLayout()
         {
             this.Text = "مختبر الفضاءات اللونية التفاعلي ثلاثي الأبعاد - 3D Color Spaces Lab";
@@ -176,10 +185,14 @@ namespace pixellab
                     localSelectedColor = pickedColor;
                     UpdateSyncReport(localSelectedColor); 
                     panel3D.Invalidate(); 
+                    if (Application.OpenForms["Form1"] is Form1 mainForm)
+                    {
+                        mainForm.UpdateSlidersFrom3D(pickedColor,selectedSystem);
+                    }
                 }
             }
         }
-
+        
         private void Panel3D_MouseMove(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)

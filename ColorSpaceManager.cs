@@ -21,10 +21,10 @@ namespace pixellab
         private static void Initialize()
         {
             _colorSpaces["RGB"] = new List<ColorChannel>
-            {
-                new ColorChannel { Name="Red", Min=-255, Max=255 },
-                new ColorChannel { Name="Green", Min=-255, Max=255 },
-                new ColorChannel { Name="Blue", Min=-255, Max=255 }
+{
+                new ColorChannel { Name="Red", Min=0, Max=255 },
+                new ColorChannel { Name="Green", Min=0, Max=255 },
+                new ColorChannel { Name="Blue", Min=0, Max=255 }
             };
 
             _colorSpaces["HSV"] = new List<ColorChannel>
@@ -44,23 +44,23 @@ namespace pixellab
 
             _colorSpaces["LAB"] = new List<ColorChannel>
             {
-                new ColorChannel { Name="L", Min=0, Max=100 },
-                new ColorChannel { Name="A", Min=-128, Max=127 },
-                new ColorChannel { Name="B", Min=-128, Max=127 }
+                new ColorChannel { Name="L", Min=0, Max=255 },
+                new ColorChannel { Name="A", Min=0, Max=255 }, // تمت إضافة 128
+                new ColorChannel { Name="B", Min=0, Max=255 }
             };
 
             _colorSpaces["YUV"] = new List<ColorChannel>
             {
                 new ColorChannel { Name="Y", Min=0, Max=255 },
-                new ColorChannel { Name="U", Min=-128, Max=127 },
-                new ColorChannel { Name="V", Min=-128, Max=127 }
+                new ColorChannel { Name="U", Min=0, Max=255 },
+                new ColorChannel { Name="V", Min=0, Max=255 }
             };
 
             _colorSpaces["YCbCr"] = new List<ColorChannel>
             {
-                new ColorChannel { Name="Y", Min=16, Max=235 },
-                new ColorChannel { Name="Cb", Min=16, Max=240 },
-                new ColorChannel { Name="Cr", Min=16, Max=240 }
+                new ColorChannel { Name="Y", Min=0, Max=255 },
+                new ColorChannel { Name="Cb", Min=0, Max=255 },
+                new ColorChannel { Name="Cr", Min=0, Max=255 }
             };
         }
 

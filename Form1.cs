@@ -17,13 +17,13 @@ namespace pixellab
         private Bitmap originalImage;
         private Bitmap currentImage;
 
-        private double angleX = 35.0; 
-        private double angleY = 45.0; 
-        private Point lastMousePos;  
+        // private double angleX = 35.0; 
+        // private double angleY = 45.0; 
+        // private Point lastMousePos;  
         private Color selectedPixelColor = Color.FromArgb(255, 255, 255); 
         private string currentColorSpace = "RGB";
         private System.Windows.Forms.Timer livePreviewTimer;
-
+        private FormSpaces _spaceForm;
         public Form1()
         {
             InitializeComponent();
@@ -42,11 +42,9 @@ namespace pixellab
 
         private void ApplyDarkTheme()
         {
-            // خلفية الفورم
             this.BackColor = Color.FromArgb(18, 18, 18);
             this.ForeColor = Color.White;
 
-            // تخصيص الأزرار
             StyleButton(btnopen);
             StyleButton(btnsave);
             StyleButton(btnReset);
@@ -188,8 +186,13 @@ namespace pixellab
         }
         private void btnOpen3DLab_Click(object sender, EventArgs e)
         {
-            FormSpaces spacesForm = new FormSpaces();
-            spacesForm.ShowDialog();
+            if (_spaceForm == null || _spaceForm.IsDisposed)
+            {
+                _spaceForm = new FormSpaces();
+            }
+            
+            _spaceForm.Show();
+            _spaceForm.BringToFront();
         }
 
         private void pictureBox1_MouseClick(object sender, MouseEventArgs e)
@@ -241,45 +244,164 @@ namespace pixellab
         }
 
 
-//==========================================================
-
-        private void ChannelTrackChanged(object sender,EventArgs e)
-        {
-            livePreviewTimer.Stop();
-
-            livePreviewTimer.Start();
-        }
         private void cmbColorSpaces_SelectedIndexChanged(object sender,EventArgs e)
         {
-            string selected =
-                cmbColorSpaces.SelectedItem.ToString();
-
+            string selected =cmbColorSpaces.SelectedItem.ToString();
             BuildColorControls(selected);
         }
-
-        private void InitializeLivePreview()
-        {
-            livePreviewTimer =
-            new System.Windows.Forms.Timer();
-
-            livePreviewTimer.Interval = 120;
-
-            livePreviewTimer.Tick +=
-                LivePreviewTimer_Tick;
-        }
-
-        private void LivePreviewTimer_Tick(object sender, EventArgs e)
-        {
-            livePreviewTimer.Stop();
-            
-            ImageEffectApplier.Apply(currentColorSpace, originalImage, flowColorControls, pictureBox1);
-        }
-
         private void BuildColorControls(string systemName)
         {
             currentColorSpace = systemName;
             ColorAdjustmentInterface.InitializeSliders(flowColorControls, systemName, ChannelTrackChanged);
         }
+
+        private void InitializeLivePreview()
+        {
+            livePreviewTimer =new System.Windows.Forms.Timer();
+            livePreviewTimer.Interval = 120;
+            livePreviewTimer.Tick +=LivePreviewTimer_Tick;
+        }
+        private void LivePreviewTimer_Tick(object sender, EventArgs e)
+        {
+            livePreviewTimer.Stop();
+            ImageEffectApplier.Apply(currentColorSpace, originalImage, flowColorControls, pictureBox1);
+        }
+        private bool isUpdatingFrom3D = false;
+        private void ChannelTrackChanged(object sender,EventArgs e)
+        {
+            livePreviewTimer.Stop();
+
+            livePreviewTimer.Start();
+            if (isUpdatingFrom3D) return;
+
+            Color calculatedColor = Color.White; 
+            if (currentColorSpace == "RGB")
+            {
+                int r = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Red");
+                int g = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Green");
+                int b = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Blue");
+                calculatedColor = Color.FromArgb(r, g, b);
+            }
+            else if (currentColorSpace == "HSV")
+            {
+                double h = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Hue");
+                double s = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Saturation") / 100.0;
+                double v = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Value") / 100.0;
+                calculatedColor = HsvConverter.ToRgb(h, s, v); // استخدام المحول الخاص بكِ
+            }
+            else if (currentColorSpace == "LAB")
+            {
+                double l = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "L");
+                double a = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "A");
+                double b = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "B");
+                calculatedColor = LabConverter.ToRgb(l, a, b); // استخدام المحول الخاص بكِ
+            }
+            else if (currentColorSpace == "CMYK")
+            {
+                double c = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Cyan") / 100.0;
+                double m = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Magenta") / 100.0;
+                double y = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Yellow") / 100.0;
+                double k = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Black") / 100.0;
+                calculatedColor = CmykConverter.ToRgb(c, m, y, k);
+            }
+            else if (currentColorSpace == "YUV")
+            {
+                // لاحظي هنا بنقسم الـ Y على 255 إذا كان المحول عندك بيتعامل مع مجال 0-1
+                double y = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Y") / 255.0;
+                double u = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "U");
+                double v = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "V");
+                calculatedColor = YuvConverter.ToRgb(y, u, v);
+            }
+            else if (currentColorSpace == "YCbCr")
+            {
+                double y = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Y");
+                double cb = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Cb");
+                double cr = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Cr");
+                calculatedColor = YcbcrConverter.ToRgb(y, cb, cr);
+            }
+            
+            panelSelectedColor.BackColor = calculatedColor;
+
+            if (_spaceForm != null && !_spaceForm.IsDisposed)
+            {
+                _spaceForm.UpdateFromForm1(calculatedColor);
+            }
+        }
+        /// <summary>
+        /// //////////////////////////////////////////////////////////////////////  
+        ///         
+        /// </summary>
+    
+    // ////////////////////////////////////////////////////////////////////////////
+    // /// /////////////////////////////////////////////////////////////////////////////
+    // /// 
+    // ///// من المجسم للسلايدرات    
+        public void UpdateSlidersFrom3D(Color pickedColor, string systemName)
+        {
+            livePreviewTimer.Stop();
+            isUpdatingFrom3D = true;
+            
+            panelSelectedColor.BackColor = pickedColor;
+
+            if (systemName == "RGB Cube" || systemName == "RGB")
+            {
+                UpdateSingleSlider("Red", pickedColor.R);
+                UpdateSingleSlider("Green", pickedColor.G);
+                UpdateSingleSlider("Blue", pickedColor.B);
+            }
+            else if (systemName == "HSV Cone" || systemName == "HSV")
+            {
+                var hsv = HsvConverter.FromRgb(pickedColor);
+                UpdateSingleSlider("Hue", (int)hsv.Hue);
+                UpdateSingleSlider("Saturation", (int)(hsv.Saturation * 100));
+                UpdateSingleSlider("Value", (int)(hsv.Value * 100));
+            }
+            else if (systemName == "Lab Space" || systemName == "LAB")
+            {
+                var lab = LabConverter.FromRgb(pickedColor);
+                UpdateSingleSlider("L", (int)lab.L);
+                UpdateSingleSlider("A", (int)lab.A);
+                UpdateSingleSlider("B", (int)lab.B);
+            }
+            else if (systemName == "CMYK Space" || systemName == "CMYK")
+            {
+                var cmyk = CmykConverter.FromRgb(pickedColor); // تأكدي من وجود FromRgb عندك
+                UpdateSingleSlider("Cyan", (int)(cmyk.C * 100));
+                UpdateSingleSlider("Magenta", (int)(cmyk.M * 100));
+                UpdateSingleSlider("Yellow", (int)(cmyk.Y * 100));
+                UpdateSingleSlider("Black", (int)(cmyk.K * 100));
+            }
+            else if (systemName == "YUV Space" || systemName == "YUV")
+            {
+                var yuv = YuvConverter.FromRgb(pickedColor);
+                UpdateSingleSlider("Y", (int)(yuv.Y * 255));
+                UpdateSingleSlider("U", (int)yuv.U);
+                UpdateSingleSlider("V", (int)yuv.V);
+            }
+            else if (systemName == "YCbCr Space" || systemName == "YCbCr")
+            {
+                var ycc = YcbcrConverter.FromRgb(pickedColor);
+                UpdateSingleSlider("Y", (int)ycc.Y);
+                UpdateSingleSlider("Cb", (int)ycc.Cb);
+                UpdateSingleSlider("Cr", (int)ycc.Cr);
+            }
+
+            livePreviewTimer.Start();
+            isUpdatingFrom3D = false;
+        }
+
+        private void UpdateSingleSlider(string name, int value)
+        {
+            foreach (Control ctrl in flowColorControls.Controls)
+            {
+                if (ctrl is ChannelControl cc && cc.lblName.Text == name)
+                {
+                    cc.track.Value = value; 
+                    cc.lblValue.Text = value.ToString(); // تحديث النص
+                }
+            }
+        }
+
 
     }
 }
