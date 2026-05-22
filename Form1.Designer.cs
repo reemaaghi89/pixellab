@@ -357,6 +357,7 @@ namespace pixellab
 
             this.btnOpen3DLab.ForeColor =
                 Color.White;
+            this.btnOpen3DLab.Dock = DockStyle.Top;
 
             this.btnOpen3DLab.Font =
                 new Font("Segoe UI", 10, FontStyle.Bold);
@@ -389,7 +390,7 @@ namespace pixellab
 
             this.panelColorCard.Width = 190;
 
-            this.panelColorCard.Height = 480;
+            this.panelColorCard.Height = 300;
 
             this.panelColorCard.BackColor =
                 Color.FromArgb(32, 32, 32);
@@ -475,16 +476,16 @@ namespace pixellab
             // =====================================================
 
             this.panelSelectedColor.Location =
-                new Point(20, 20);
+                new Point(20, 60);
 
             this.panelSelectedColor.Size =
-                new Size(240, 40);
+                new Size(240, 30);
 
             this.panelSelectedColor.BackColor =
                 Color.Black;
 
             this.lblInspectorInfo.Location =
-                new Point(20, 80);
+                new Point(20, 100);
 
             this.lblInspectorInfo.Size =
                 new Size(240, 500);
@@ -520,6 +521,8 @@ namespace pixellab
 
             this.panelInspector.Controls.Add(this.panelSelectedColor);
             this.panelInspector.Controls.Add(this.lblInspectorInfo);
+            this.panelInspector.Controls.Add(this.btnOpen3DLab);
+            btnOpen3DLab.BringToFront();
 
             this.panelColorCard.Controls.Add(this.lblColorTitle);
             this.panelColorCard.Controls.Add(this.cmbColorSpaces);
@@ -543,10 +546,10 @@ namespace pixellab
             this.flowSidebar.Controls.Add(this.lblInfo);
 
             this.flowSidebar.Controls.Add(this.panelColorCard);
-            this.flowSidebar.Controls.Add(this.panelCube);
+            //this.flowSidebar.Controls.Add(this.panelCube);
             this.flowSidebar.Controls.Add(this.lblExperimentalSection);
 
-            this.flowSidebar.Controls.Add(this.btnOpen3DLab);
+            //this.flowSidebar.Controls.Add(this.btnOpen3DLab);
 
             this.panelSidebar.Controls.Add(this.flowSidebar);
 
