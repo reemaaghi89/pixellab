@@ -261,15 +261,14 @@
             //
             this.panelInspector.BackColor = Color.FromArgb(35, 35, 35);
 
-            this.panelInspector.Size = new Size(240, 220);
+            this.panelInspector.Size = new Size(280, 500);
 
             this.panelInspector.Location = new Point(20, 20);
-
-            this.panelInspector.BorderStyle = BorderStyle.None;
+            this.panelInspector.BorderStyle = BorderStyle.FixedSingle;
             this.panelInspector.Padding = new Padding(10);
             this.panelInspector.Controls.Add(this.panelSelectedColor);
             this.panelInspector.Controls.Add(this.lblInspectorInfo);
-            
+
             //
             // lblInspectorInfo
             //
@@ -282,10 +281,15 @@
                 new Point(20, 90);
 
             this.lblInspectorInfo.Size =
-                new Size(200, 100);
+                 new Size(300, 500);
 
             this.lblInspectorInfo.Text =
                 "No color selected";
+
+            this.lblInspectorInfo.AutoSize = false;
+
+            this.lblInspectorInfo.TextAlign =
+               ContentAlignment.TopLeft;
 
             //
             // flowSidebar

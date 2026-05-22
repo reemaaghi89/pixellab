@@ -26,7 +26,18 @@ namespace pixellab
         {
             InitializeComponent();
             ApplyDarkTheme();
-            // تفعيل ميزة التخزين المؤقت المزدوج لمنع الوميض المزعج أثناء تدوير المكعب
+            panelInspector.MouseDown += PanelInspector_MouseDown;
+            panelInspector.MouseMove += PanelInspector_MouseMove;
+            panelInspector.MouseUp += PanelInspector_MouseUp;
+
+            lblInspectorInfo.MouseDown += PanelInspector_MouseDown;
+            lblInspectorInfo.MouseMove += PanelInspector_MouseMove;
+            lblInspectorInfo.MouseUp += PanelInspector_MouseUp;
+
+            panelSelectedColor.MouseDown += PanelInspector_MouseDown;
+            panelSelectedColor.MouseMove += PanelInspector_MouseMove;
+            panelSelectedColor.MouseUp += PanelInspector_MouseUp;
+                        // تفعيل ميزة التخزين المؤقت المزدوج لمنع الوميض المزعج أثناء تدوير المكعب
             typeof(Panel).InvokeMember("DoubleBuffered",
                 System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
                 null, panelCube, new object[] { true });
@@ -302,22 +313,41 @@ namespace pixellab
         private void chkGreen_CheckedChanged(object sender, EventArgs e) { ApplyRGB(); }
         private void chkBlue_CheckedChanged(object sender, EventArgs e) { ApplyRGB(); }
 
-        private void LoadAndDisplayImage(string filePath)
+        private bool isDragging = false;
+
+        private Point dragCursorPoint;
+
+        private Point dragPanelPoint;
+
+        private void PanelInspector_MouseDown(object sender, MouseEventArgs e)
         {
-            // 1. تحميل الصورة وإعداد النسخ
-            originalImage = new Bitmap(filePath);
-            currentImage = new Bitmap(originalImage);
-            pictureBox1.Image = currentImage;
+            isDragging = true;
 
-            // 2. جلب معلومات الملف وتحديث بطاقة النصوص (الطلب الثامن)
-            System.IO.FileInfo file = new System.IO.FileInfo(filePath);
-            lblInfo.Text = "Name: " + file.Name +
-                        "\nSize: " + (file.Length / 1024) + " KB" +
-                        "\nWidth: " + originalImage.Width +
-                        "\nHeight: " + originalImage.Height;
+            dragCursorPoint = Cursor.Position;
 
-            // 3. إعادة رسم مكعب الألوان ثلاثي الأبعاد ليتحرك المؤشر
-            panelCube.Invalidate();
+            dragPanelPoint = panelInspector.Location;
         }
+
+        private void PanelInspector_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (isDragging)
+            {
+                Point difference =
+                    Point.Subtract(
+                        Cursor.Position,
+                        new Size(dragCursorPoint));
+
+                panelInspector.Location =
+                    Point.Add(
+                        dragPanelPoint,
+                        new Size(difference));
+            }
+        }
+
+        private void PanelInspector_MouseUp(object sender, MouseEventArgs e)
+        {
+            isDragging = false;
+        }
+       
     }
 }
