@@ -22,9 +22,9 @@ namespace pixellab
         {
             _colorSpaces["RGB"] = new List<ColorChannel>
             {
-                new ColorChannel { Name="Red", Min=-255, Max=255 },
-                new ColorChannel { Name="Green", Min=-255, Max=255 },
-                new ColorChannel { Name="Blue", Min=-255, Max=255 }
+                new ColorChannel { Name="Red", Min=0, Max=255 },
+                new ColorChannel { Name="Green", Min=0, Max=255 },
+                new ColorChannel { Name="Blue", Min=0, Max=255 }
             };
 
             _colorSpaces["HSV"] = new List<ColorChannel>

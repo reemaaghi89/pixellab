@@ -57,6 +57,7 @@ namespace pixellab
                                     $"🔹 YCbCr (المعيار الرقمي):\n   Y = {y_cb:0.0}, Cb = {cb:0.0}, Cr = {cr:0.0}";
 
                 return (pixelColor, reportText);
+               
             }
 
             // في حال نقر المستخدم خارج الصورة (بالهامش الرمادي) نرجع قيم فارغة
