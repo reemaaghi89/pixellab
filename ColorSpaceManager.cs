@@ -44,7 +44,7 @@ namespace pixellab
             _colorSpaces["LAB"] = new List<ColorChannel>
             {
                 new ColorChannel { Name="L", Min=0, Max=255 },
-                new ColorChannel { Name="A", Min=-128, Max=127 }, // تمت إضافة 128
+                new ColorChannel { Name="A", Min=-128, Max=127 }, 
                 new ColorChannel { Name="B", Min=-128, Max=127 }
             };
             _colorSpaces["YUV"] = new List<ColorChannel>

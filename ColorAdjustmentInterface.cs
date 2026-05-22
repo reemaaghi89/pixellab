@@ -86,11 +86,10 @@ public static void SetSliderValue(FlowLayoutPanel panel, string sliderName, int 
     {
         if (control is ChannelControl slider && slider.lblName.Text == sliderName)
         {
-            // التأكد من أن القيمة تقع ضمن الحدود المسموحة للسلايدر
             if (value >= slider.track.Minimum && value <= slider.track.Maximum)
             {
                 slider.track.Value = value;
-                slider.UpdateValueLabel(); // تحديث النص الرقمي بجانب السلايدر
+                slider.UpdateValueLabel(); 
             }
             break;
         }

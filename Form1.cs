@@ -55,16 +55,13 @@ namespace pixellab
             StyleButton(btnOpen3DLab);
             StyleButton(btn);
 
-            // معلومات الصورة
             lblInfo.BackColor = Color.FromArgb(30, 30, 30);
             lblInfo.ForeColor = Color.White;
             lblInfo.BorderStyle = BorderStyle.None;
 
 
-            // الصورة
             pictureBox1.BackColor = Color.FromArgb(35, 35, 35);
 
-            // المكعب
             panelCube.BackColor = Color.FromArgb(25, 25, 25);
             panelSelectedColor.BorderStyle = BorderStyle.None;
 
@@ -333,14 +330,14 @@ namespace pixellab
                 double h = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Hue");
                 double s = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Saturation") / 100.0;
                 double v = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Value") / 100.0;
-                calculatedColor = HsvConverter.ToRgb(h, s, v); // استخدام المحول الخاص بكِ
+                calculatedColor = HsvConverter.ToRgb(h, s, v); 
             }
             else if (currentColorSpace == "LAB")
             {
                 double l = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "L");
                 double a = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "A");
                 double b = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "B");
-                calculatedColor = LabConverter.ToRgb(l, a, b); // استخدام المحول الخاص بكِ
+                calculatedColor = LabConverter.ToRgb(l, a, b); 
             }
             else if (currentColorSpace == "CMYK")
             {
@@ -352,7 +349,6 @@ namespace pixellab
             }
             else if (currentColorSpace == "YUV")
             {
-                // لاحظي هنا بنقسم الـ Y على 255 إذا كان المحول عندك بيتعامل مع مجال 0-1
                 double y = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "Y") / 255.0;
                 double u = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "U");
                 double v = ColorAdjustmentInterface.GetSliderValue(flowColorControls, "V");
@@ -411,7 +407,7 @@ namespace pixellab
             }
             else if (systemName == "CMYK Space" || systemName == "CMYK")
             {
-                var cmyk = CmykConverter.FromRgb(pickedColor); // تأكدي من وجود FromRgb عندك
+                var cmyk = CmykConverter.FromRgb(pickedColor); 
                 UpdateSingleSlider("Cyan", (int)(cmyk.C * 100));
                 UpdateSingleSlider("Magenta", (int)(cmyk.M * 100));
                 UpdateSingleSlider("Yellow", (int)(cmyk.Y * 100));
@@ -442,7 +438,6 @@ namespace pixellab
             {
                 if (ctrl is ChannelControl cc && cc.lblName.Text == name)
                 {
-                    // 1. تحديد النطاق المسموح به بناءً على الـ TrackBar نفسه
                     int min = cc.track.Minimum;
                     int max = cc.track.Maximum;
 

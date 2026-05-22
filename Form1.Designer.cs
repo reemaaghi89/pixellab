@@ -242,13 +242,13 @@ namespace pixellab
 
             this.lblImageSection.Text = "IMAGE";
             this.lblFiltersSection.Text = "FILTERS";
-            this.lblExperimentalSection.Text = "EXPERIMENTAL";
+            // this.lblExperimentalSection.Text = "EXPERIMENTAL";
 
             Label[] sectionLabels =
             {
                 this.lblImageSection,
                 this.lblFiltersSection,
-                this.lblExperimentalSection
+                // this.lblExperimentalSection
             };
 
             foreach (Label lbl in sectionLabels)
@@ -390,7 +390,7 @@ namespace pixellab
 
             this.panelColorCard.Width = 190;
 
-            this.panelColorCard.Height = 300;
+            this.panelColorCard.Height = 380;
 
             this.panelColorCard.BackColor =
                 Color.FromArgb(32, 32, 32);
@@ -399,7 +399,7 @@ namespace pixellab
                 new Padding(10);
 
             this.panelColorCard.Margin =
-                new Padding(0, 10, 0, 10);
+                new Padding(0, 5, 0, 10);
 
             // =====================================================
             // COLOR TITLE

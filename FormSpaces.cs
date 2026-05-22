@@ -47,7 +47,7 @@ namespace pixellab
         {
             this.Text = "مختبر الفضاءات اللونية التفاعلي ثلاثي الأبعاد - 3D Color Spaces Lab";
             this.Size = new Size(1150, 780); 
-            this.MinimumSize = new Size(800, 600); // يمنع المستخدم من تصغير النافذة لحجم غير منطقي يخرب التصميم
+            this.MinimumSize = new Size(800, 600); 
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = Color.FromArgb(18, 18, 22);
 
@@ -72,41 +72,35 @@ namespace pixellab
             listSystems.SelectedIndex = 0;
             listSystems.SelectedIndexChanged += ListSystems_SelectedIndexChanged;
 
-            // الفاصل بين القائمة والتقرير
             Panel spacer = new Panel { Dock = DockStyle.Top, Height = 15 }; 
 
-            // 3. صندوق التقارير الذكي (يتمدد تلقائياً ليملأ باقي مساحة القائمة الجانبية نزولاً)
             RichTextBox rtbReport = new RichTextBox();
-            rtbReport.Dock = DockStyle.Fill; // يملأ كامل المساحة المتبقية تحت القائمة
+            rtbReport.Dock = DockStyle.Fill; 
             rtbReport.Font = new Font("Consolas", 9.5f, FontStyle.Bold);
             rtbReport.ForeColor = Color.FromArgb(220, 220, 225);
             rtbReport.BackColor = Color.FromArgb(18, 18, 22);
             rtbReport.BorderStyle = BorderStyle.None;
-            rtbReport.ReadOnly = true;        // للمشاهدة فقط
-            rtbReport.WordWrap = true;        // يمنع انقطاع النص ويقوم بإنزال الكلمات للسطر الجديد تلقائياً
-            rtbReport.ScrollBars = RichTextBoxScrollBars.Vertical; // يظهر شريط تصفح جانبي فقط إذا صغرت الشاشة عمودياً
+            rtbReport.ReadOnly = true;        
+            rtbReport.WordWrap = true;      
+            rtbReport.ScrollBars = RichTextBoxScrollBars.Vertical; 
             rtbReport.Name = "rtbReport";
 
-            // إضافة العناصر بترتيبها الصحيح داخل الحاوية اليسرى
             sidePanel.Controls.Add(rtbReport);
             sidePanel.Controls.Add(spacer);
             sidePanel.Controls.Add(listSystems);
 
-            // 4. منطقة العرض الثلاثي الأبعاد (تتوسع وتتقلص تلقائياً وبشكل مرن مع حركة النافذة)
             panel3D = new Panel();
-            panel3D.Dock = DockStyle.Fill; // سيمتص كل المساحة المتبقية في الشاشة فوراً عند التكبير
+            panel3D.Dock = DockStyle.Fill; 
             panel3D.BackColor = Color.FromArgb(12, 12, 14); 
             panel3D.Paint += Panel3D_Paint;
             panel3D.MouseDown += Panel3D_MouseDown;
             panel3D.MouseMove += Panel3D_MouseMove;
-            panel3D.SizeChanged += Panel3D_SizeChanged; // حدث هام لإعادة رسم المجسم بأبعاده الجديدة فوراً
+            panel3D.SizeChanged += Panel3D_SizeChanged; 
 
-            // إضافة الحاويات للـ Form
             this.Controls.Add(panel3D);
             this.Controls.Add(sidePanel);
         }
 
-        // هذا التابع يضمن إعادة رسم المجسم وتحديث مركز الأبعاد فور قيام المستخدم بسحب وتغيير حجم الواجهة
         private void Panel3D_SizeChanged(object sender, EventArgs e)
         {
             panel3D.Invalidate(); 
@@ -119,8 +113,7 @@ namespace pixellab
             var lab = LabConverter.FromRgb(targetColor);
             var cmyk = CmykConverter.FromRgb(targetColor);
 
-            // صياغة النص بشكل عمودي منظم ومتناسق مع الحجم الصغير
-            cachedReportText = $"📊 تقرير المزامنة اللحظي\n" +
+            cachedReportText = $"The Color Space \n" +
                             $"━━━━━━━━━━━━━━━━━━━━━\n" +
                             $"RGB  → R:{targetColor.R} G:{targetColor.G} B:{targetColor.B}\n\n" +
                             $"HSV  → H:{hsv.Hue:0}° S:{hsv.Saturation * 100:0}% V:{hsv.Value * 100:0}%\n\n" +
@@ -129,13 +122,13 @@ namespace pixellab
                             $"Lab  → L*:{lab.L:0.0} a*:{lab.A:0.0} b*:{lab.B:0.0}\n\n" +
                             $"CMYK → C:{cmyk.C * 100:0}% M:{cmyk.M * 100:0}% Y:{cmyk.Y * 100:0}% K:{cmyk.K * 100:0}%";
 
-            // تحديث أداة الـ Label الموجودة داخل الـ sidePanel
-            if (this.Controls.Find("lblReport", true).FirstOrDefault() is Label reportLabel)
+            if (this.Controls.Find("rtbReport", true).FirstOrDefault() is RichTextBox reportBox)
             {
-                reportLabel.Text = cachedReportText;
+                reportBox.Text = cachedReportText;
+                
+                this.ActiveControl = null;
             }
         }
-
         private void ListSystems_SelectedIndexChanged(object sender, EventArgs e)
         {
             selectedSystem = listSystems.SelectedItem.ToString();
@@ -173,7 +166,6 @@ namespace pixellab
                 {
                     CmykRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, GetCurrentZoom());
                 }
-                // تم إزالة استدعاء دالة رسم النص من هنا ليبقى الفضاء ثلاثي الأبعاد نقيّاً
             }
             catch (Exception ex)
             {
@@ -240,7 +232,6 @@ namespace pixellab
                 panel3D.Invalidate(); 
             }
         }
-        // استبدل التعريف القديم بهذا القاموس
         private Dictionary<string, float> systemZooms = new Dictionary<string, float>
         {
             { "RGB Cube", 1.0f },
@@ -251,7 +242,6 @@ namespace pixellab
             { "CMYK", 1.0f }
         };
 
-        // تابع بسيط لجلب الزوم الخاص بالنظام الحالي المختار
         private float GetCurrentZoom() 
         {
             return systemZooms.ContainsKey(selectedSystem) ? systemZooms[selectedSystem] : 1.0f;
@@ -264,7 +254,6 @@ namespace pixellab
             if (e.Delta > 0) currentZoom += 0.1f;
             else currentZoom -= 0.1f;
 
-            // حفظ الزوم للنظام الحالي فقط
             systemZooms[selectedSystem] = Math.Max(0.3f, Math.Min(3.0f, currentZoom));
             
             panel3D.Invalidate();
@@ -279,11 +268,10 @@ namespace pixellab
 
             e.Graphics.FillRectangle(new SolidBrush(backColor), e.Bounds);
             
-            // رسم النص في المنتصف عمودياً
             TextRenderer.DrawText(e.Graphics, listSystems.Items[e.Index].ToString(), 
                 listSystems.Font, e.Bounds, textColor, TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
             
-            if (isSelected) // إضافة خط تمييز صغير
+            if (isSelected)
             {
                 e.Graphics.FillRectangle(Brushes.Cyan, e.Bounds.X, e.Bounds.Y, 4, e.Bounds.Height);
             }
