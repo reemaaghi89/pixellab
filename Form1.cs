@@ -8,12 +8,14 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using pixellab.Converters;
+using System.IO;
+using System.Drawing.Drawing2D;
 namespace pixellab
 {
     public partial class Form1 : Form
     {
-        Bitmap originalImage;
-        Bitmap currentImage;
+        private Bitmap originalImage;
+        private Bitmap currentImage;
 
         private double angleX = 35.0; // زاوية الدوران الأفقي البدئية
         private double angleY = 45.0; // زاوية الدوران العمودي البدئية
@@ -23,12 +25,135 @@ namespace pixellab
         public Form1()
         {
             InitializeComponent();
-            this.AllowDrop = true;
-            this.DragEnter += new DragEventHandler(Form1_DragEnter);
-            this.DragDrop += new DragEventHandler(Form1_DragDrop);
-            typeof(Panel).InvokeMember("DoubleBuffered", 
-                System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic, 
+            ApplyDarkTheme();
+            // تفعيل ميزة التخزين المؤقت المزدوج لمنع الوميض المزعج أثناء تدوير المكعب
+            typeof(Panel).InvokeMember("DoubleBuffered",
+                System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
                 null, panelCube, new object[] { true });
+        }
+
+        private void ApplyDarkTheme()
+        {
+            // خلفية الفورم
+            this.BackColor = Color.FromArgb(18, 18, 18);
+            this.ForeColor = Color.White;
+
+            // تخصيص الأزرار
+            StyleButton(btnopen);
+            StyleButton(btnsave);
+            StyleButton(btnReset);
+            StyleButton(btnGray);
+            StyleButton(btnQuantize);
+            StyleButton(btnOpen3DLab);
+            StyleButton(btn);
+
+            // معلومات الصورة
+            lblInfo.BackColor = Color.FromArgb(30, 30, 30);
+            lblInfo.ForeColor = Color.White;
+            lblInfo.BorderStyle = BorderStyle.None;
+
+
+            // الصورة
+            pictureBox1.BackColor = Color.FromArgb(35, 35, 35);
+
+            // المكعب
+            panelCube.BackColor = Color.FromArgb(25, 25, 25);
+            panelSelectedColor.BorderStyle = BorderStyle.None;
+
+            // الـ TrackBars
+            trackRed.BackColor = this.BackColor;
+            trackGreen.BackColor = this.BackColor;
+            trackBlue.BackColor = this.BackColor;
+
+            // الـ Checkboxes
+            chkRed.ForeColor = Color.White;
+            chkGreen.ForeColor = Color.White;
+            chkBlue.ForeColor = Color.White;
+
+            // Labels
+            label1.ForeColor = Color.White;
+            label2.ForeColor = Color.White;
+            label3.ForeColor = Color.White;
+        }
+
+        private void StyleButton(Button button)
+        {
+            button.FlatStyle = FlatStyle.Flat;
+
+            button.FlatAppearance.BorderSize = 0;
+
+            button.BackColor = Color.FromArgb(45, 45, 48);
+
+            button.ForeColor = Color.White;
+
+            button.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+
+            button.Cursor = Cursors.Hand;
+
+            button.Height = 40;
+
+            button.MouseEnter += Button_MouseEnter;
+
+            button.MouseLeave += Button_MouseLeave;
+
+            button.Width = 200;
+
+            button.Margin = new Padding(5);
+
+            button.Region = Region.FromHrgn(
+          CreateRoundRectRgn(0, 0, button.Width, button.Height, 10, 10));
+        }
+
+        private void Button_MouseEnter(object sender, EventArgs e)
+        {
+            Button button = (Button)sender;
+
+            button.BackColor = Color.FromArgb(70, 70, 75);
+        }
+
+        private void Button_MouseLeave(object sender, EventArgs e)
+        {
+            Button button = (Button)sender;
+
+            button.BackColor = Color.FromArgb(45, 45, 48);
+        }
+
+        [System.Runtime.InteropServices.DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        private static extern IntPtr CreateRoundRectRgn
+        (
+            int left,
+            int top,
+            int right,
+            int bottom,
+            int width,
+            int height
+        );
+        private bool HasImage()
+        {
+            return currentImage != null;
+        }
+
+        private void LoadImage(string imagePath)
+        {
+            originalImage = new Bitmap(imagePath);
+            currentImage = new Bitmap(originalImage);
+
+            pictureBox1.Image = currentImage;
+
+            UpdateImageInfo(imagePath);
+
+            panelCube.Invalidate();
+        }
+
+        private void UpdateImageInfo(string imagePath)
+        {
+            FileInfo file = new FileInfo(imagePath);
+
+            lblInfo.Text =
+                $"Name: {file.Name}" +
+                $"\nSize: {file.Length / 1024} KB" +
+                $"\nWidth: {originalImage.Width}" +
+                $"\nHeight: {originalImage.Height}";
         }
 
         private void btnopen_Click(object sender, EventArgs e)
@@ -38,18 +163,13 @@ namespace pixellab
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                LoadAndDisplayImage(ofd.FileName);
+                LoadImage(ofd.FileName);
+                panelCube.Invalidate(); // إعادة رسم المكعب للتحديث
             }
         }
-        private void Form1_DragDrop(object sender, DragEventArgs e)
-        {
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            if (files != null && files.Length > 0)
-            {
-                LoadAndDisplayImage(files[0]);
-            }
-        }
-        
+
+        // استدعاء المعالجة السريعة بالزمن الحقيقي لقنوات RGB بدون تعليق البرنامج
+
         private void btnReset_Click(object sender, EventArgs e)
         {
             if (originalImage == null) return;
@@ -70,7 +190,7 @@ namespace pixellab
 
         private void btnsave_Click(object sender, EventArgs e)
         {
-            if (currentImage == null) return;
+            if (!HasImage()) return;
 
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Filter = "PNG|*.png|JPEG|*.jpg|Bitmap|*.bmp";
@@ -85,7 +205,6 @@ namespace pixellab
             FormSpaces spacesForm = new FormSpaces();
             spacesForm.ShowDialog();
         }
-        
 
         private void pictureBox1_Click(object sender, EventArgs e) { }
 
@@ -100,6 +219,7 @@ namespace pixellab
             if (selectedColor.HasValue)
             {
                 Color pixelColor = selectedColor.Value;
+                panelSelectedColor.BackColor = pixelColor;
                 selectedPixelColor = pixelColor; // تحديث اللون العام للمكعب
 
                 // مزامنة الـ Trackbars على اليمين تلقائياً
@@ -110,22 +230,32 @@ namespace pixellab
                 // تحديث لوحة رسم مكعب الألوان فوراً ليتحرك المؤشر المشع
                 panelCube.Invalidate();
 
-                // عرض صندوق الرسائل بالنص المولد جاهزاً
-                MessageBox.Show(infoReport, "Pixel Lab - Color Spaces", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                panelSelectedColor.BackColor = pixelColor;
+
+                lblInspectorInfo.Text = infoReport;
             }
         }
 
 
         private void Form1_DragEnter(object sender, DragEventArgs e) { e.Effect = DragDropEffects.Copy; }
-        
+        private void Form1_DragDrop(object sender, DragEventArgs e)
+        {
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            LoadImage(files[0]);
+        }
 
         //====================================================================================
         //====================================================================================
         // حدث النقر على زر تقليل عدد الألوان (تكميم الصورة)
         private void btnQuantizeColors_Click(object sender, EventArgs e)
         {
-            if (originalImage == null) return;
-            Bitmap quantizedResult = ImageProcessor.QuantizeImageColors(originalImage, colorLevelsCount: 4);
+            // التأكد من وجود صورة محملة في مساحة العمل أولاً
+            if (!HasImage()) return;
+
+            // استدعاء تابع تقليل الألوان السريع من كلاس المعالجة بـ 4 مستويات لونية
+            Bitmap quantizedResult = ImageProcessor.QuantizeImageColors((Bitmap)currentImage, colorLevelsCount: 4);
+
+            // تحديث الصورة وعرضها على الواجهة الرسومية فوراً
             currentImage = quantizedResult;
             pictureBox1.Image = currentImage;
         }
@@ -133,7 +263,7 @@ namespace pixellab
         // حدث النقر على زر تحويل الصورة إلى رمادي
         private void btnConvertGrayscale_Click(object sender, EventArgs e)
         {
-            if (currentImage == null) return;
+            if (!HasImage()) return;
             // استدعاء تابع الرمادي السريع
             currentImage = ImageProcessor.ConvertToGrayscale((Bitmap)currentImage);
             pictureBox1.Image = currentImage;
@@ -141,7 +271,7 @@ namespace pixellab
 
         private void btnConvertBlackAndWhite_Click(object sender, EventArgs e)
         {
-            if (currentImage == null) return;
+            if (!HasImage()) return;
 
             // استدعاء تابع الأبيض والأسود الصافي الحقيقي
             currentImage = ImageProcessor.ConvertToBlackAndWhite((Bitmap)currentImage);
