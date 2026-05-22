@@ -214,7 +214,6 @@ namespace pixellab
 
             // 🌟 استدعاء السطر السحري الشامل من ملف التحليل الخارجي
             var (selectedColor, infoReport) = ColorAnalyzer.AnalyzeClickedPixel(currentImage, pictureBox1.Width, pictureBox1.Height, e);
-
             // إذا نجح التحليل والتقطنا لوناً حقيقياً داخل حدود الصورة
             if (selectedColor.HasValue)
             {

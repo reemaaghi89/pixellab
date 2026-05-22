@@ -1,13 +1,16 @@
-
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Collections.Generic;
+using pixellab.Converters; // استدعاء الـ Converter المعتمد عندك
 
 namespace pixellab.Renderers
 {
-    public static class RgbCubeRenderer
+    public static class YuvSpaceRenderer
     {
+        // عامل تحجيم موحد لإظهار المط الهندسي الحقيقي بدون تصفير الأبعاد
+        private const double SpaceScale = 0.35; 
+
         private static (PointF Point, double ZDepth) ProjectWithDepth(double x, double y, double z, int cx, int cy, double angleX, double angleY, float zoom)
         {
             double radX = angleX * Math.PI / 180.0;
@@ -16,15 +19,13 @@ namespace pixellab.Renderers
             double cosX = Math.Cos(radX), sinX = Math.Sin(radX);
             double cosY = Math.Cos(radY), sinY = Math.Sin(radY);
 
-            // تدوير حول المحاور الثلاثية
             double rY = y * cosX - z * sinX;
             double rZ = y * sinX + z * cosX;
             double rX = x * cosY + rZ * sinY;
             double depthZ = -x * sinY + rZ * cosY;
 
-            // إسقاط على الشاشة مع أخذ الزوم بعين الاعتبار
-            float screenX = (float)(cx + rX * 2.5 * zoom);
-            float screenY = (float)(cy - rY * 2.5 * zoom);
+            float screenX = (float)(cx + rX * zoom);
+            float screenY = (float)(cy - rY * zoom);
 
             return (new PointF(screenX, screenY), depthZ);
         }
@@ -41,15 +42,33 @@ namespace pixellab.Renderers
             int cx = width / 2;
             int cy = height / 2;
 
+            double[,] rgbVertices = {
+                {0, 0, 0},       // 0: الأسود
+                {255, 0, 0},     // 1: الأحمر
+                {255, 255, 0},   // 2: الأصفر
+                {0, 255, 0},     // 3: الأخضر
+                {0, 0, 255},     // 4: الأزرق
+                {255, 0, 255},   // 5: الماجنتا
+                {255, 255, 255}, // 6: الأبيض
+                {0, 255, 255}    // 7: السيان
+            };
+
+            double[,] vertices = new double[8, 3];
             PointF[] pts = new PointF[8];
             double[] vertexDepths = new double[8];
-            double[,] vertices = {
-                {-50, -50, -50}, { 50, -50, -50}, { 50,  50, -50}, {-50,  50, -50}, 
-                {-50, -50,  50}, { 50, -50,  50}, { 50,  50,  50}, {-50,  50,  50} 
-            };
 
             for (int i = 0; i < 8; i++)
             {
+                Color rgbColor = Color.FromArgb((int)rgbVertices[i, 0], (int)rgbVertices[i, 1], (int)rgbVertices[i, 2]);
+                
+                // استخدام الـ Converter الأصلي الخاص بك
+                var (y, u, v) = YuvConverter.FromRgb(rgbColor);
+                
+                // هندسة المجسم المائل الحقيقي بناءً على الإحداثيات المستخرجة
+                vertices[i, 0] = u * SpaceScale;
+                vertices[i, 1] = (y - 127.5) * SpaceScale; // السطوع موسط عمودياً
+                vertices[i, 2] = v * SpaceScale;
+
                 var projection = ProjectWithDepth(vertices[i, 0], vertices[i, 1], vertices[i, 2], cx, cy, angleX, angleY, zoom);
                 pts[i] = projection.Point;
                 vertexDepths[i] = projection.ZDepth;
@@ -73,12 +92,11 @@ namespace pixellab.Renderers
                 new Color[] { Color.Red, Color.Yellow, Color.White, Color.Magenta }    
             };
 
-            // ترتيب الأوجه حسب العمق (Painter's Algorithm) لضمان عدم تداخل الأوجه الخلفية
             List<int> faceIndices = new List<int> { 0, 1, 2, 3, 4, 5 };
             faceIndices.Sort((a, b) => {
                 double depthA = (vertexDepths[faces[a][0]] + vertexDepths[faces[a][1]] + vertexDepths[faces[a][2]] + vertexDepths[faces[a][3]]) / 4.0;
                 double depthB = (vertexDepths[faces[b][0]] + vertexDepths[faces[b][1]] + vertexDepths[faces[b][2]] + vertexDepths[faces[b][3]]) / 4.0;
-                return depthA.CompareTo(depthB); // من الأبعد إلى الأقرب
+                return depthA.CompareTo(depthB);
             });
 
             foreach (int i in faceIndices)
@@ -100,47 +118,54 @@ namespace pixellab.Renderers
                     }
                 }
 
-                // رسم خطوط حدود الأوجه لرؤية هندسية واضحة للمكعب
-                using (Pen p = new Pen(Color.FromArgb(70, Color.White), 1f))
+                using (Pen p = new Pen(Color.FromArgb(50, Color.White), 1f))
                 {
                     g.DrawPolygon(p, facePoints);
                 }
             }
 
-            // حساب موقع المؤشر المشع المشتق من الألوان المدخلة وتحديث مكانه فوق الرأس تماماً
-            double pX = ((selectedColor.R / 255.0) * 100.0) - 50.0;
-            double pY = ((selectedColor.G / 255.0) * 100.0) - 50.0;
-            double pZ = ((selectedColor.B / 255.0) * 100.0) - 50.0;
+            // رسم النقطة الذهبية بناءً على تحويل الـ Converter لـ SelectedColor
+            var (selY, selU, selV) = YuvConverter.FromRgb(selectedColor);
+            double pX = selU * SpaceScale;
+            double pY = (selY - 127.5) * SpaceScale;
+            double pZ = selV * SpaceScale;
 
             PointF targetPt = Project(pX, pY, pZ, cx, cy, angleX, angleY, zoom);
 
-            // رسم دائرة لونيّة تمثل مكان اللون المختار حالياً داخل الفضاء ثلاثي الأبعاد
             using (Brush b = new SolidBrush(selectedColor)) g.FillEllipse(b, targetPt.X - 7, targetPt.Y - 7, 14, 14);
             using (Pen goldPen = new Pen(Color.Gold, 2f)) g.DrawEllipse(goldPen, targetPt.X - 9, targetPt.Y - 9, 18, 18);
         }
 
-        // 🌟 دالة التقاط اللون المطورة لحل مشكلة التدوير مية بالمية
         public static Color GetColorAtPointDirect(Point mousePt, int width, int height, double angleX, double angleY, float zoom)
         {
             int cx = width / 2;
             int cy = height / 2;
 
+            double[,] rgbVertices = {
+                {0, 0, 0}, {255, 0, 0}, {255, 255, 0}, {0, 255, 0},
+                {0, 0, 255}, {255, 0, 255}, {255, 255, 255}, {0, 255, 255}
+            };
+
+            double[,] vertices = new double[8, 3];
             PointF[] pts = new PointF[8];
             double[] vertexDepths = new double[8];
-            double[,] vertices = {
-                {-50, -50, -50}, { 50, -50, -50}, { 50,  50, -50}, {-50,  50, -50}, 
-                {-50, -50,  50}, { 50, -50,  50}, { 50,  50,  50}, {-50,  50,  50} 
-            };
 
             for (int i = 0; i < 8; i++)
             {
+                Color rgbColor = Color.FromArgb((int)rgbVertices[i, 0], (int)rgbVertices[i, 1], (int)rgbVertices[i, 2]);
+                var (y, u, v) = YuvConverter.FromRgb(rgbColor);
+                
+                vertices[i, 0] = u * SpaceScale;
+                vertices[i, 1] = (y - 127.5) * SpaceScale;
+                vertices[i, 2] = v * SpaceScale;
+
                 var projection = ProjectWithDepth(vertices[i, 0], vertices[i, 1], vertices[i, 2], cx, cy, angleX, angleY, zoom);
                 pts[i] = projection.Point;
                 vertexDepths[i] = projection.ZDepth;
             }
 
             int[][] faces = {
-                new int[] {0, 1, 2, 3}, new int[] {4, 5, 6, 7}, new int[] {0, 1, 5, 4}, 
+                new int[] {0, 1, 2, 3}, new int[] {4, 5, 6, 7}, new int[] {0, 1, 5, 4},
                 new int[] {2, 3, 7, 6}, new int[] {0, 3, 7, 4}, new int[] {1, 2, 6, 5}
             };
 
@@ -151,7 +176,6 @@ namespace pixellab.Renderers
                 return depthA.CompareTo(depthB);
             });
 
-            // نفحص الأوجه من الأقرب للعين (الترتيب العكسي للقائمة المفرزة)
             for (int j = faceIndices.Count - 1; j >= 0; j--)
             {
                 int i = faceIndices[j];
@@ -163,14 +187,10 @@ namespace pixellab.Renderers
 
                     if (path.IsVisible(mousePt))
                     {
-                        // 🌟 استخدام الـ Ray-Casting أو الإسقاط المحلي الدقيق للوجه المختار
-                        // حساب نسب توضع النقطة داخل المضلع بشكل دقيق جداً يحاكي فضاء الـ RGB الحقيقي للمكعب
-                        double u = CalculateAdvancedBilinearRatio(mousePt, p0, p1, p2, p3, out double v);
+                        double uRatio = CalculateAdvancedBilinearRatio(mousePt, p0, p1, p2, p3, out double vRatio);
+                        uRatio = Math.Max(0.0, Math.Min(1.0, uRatio));
+                        vRatio = Math.Max(0.0, Math.Min(1.0, vRatio));
 
-                        u = Math.Max(0.0, Math.Min(1.0, u));
-                        v = Math.Max(0.0, Math.Min(1.0, v));
-
-                        // جلب الإحداثيات الـ 3D الأساسية للرؤوس الأربعة للوجه الحالي ومطابقتها مع فضاء RGB الكوني [0, 255]
                         double[,] faceVerts3D = {
                             { vertices[faces[i][0], 0], vertices[faces[i][0], 1], vertices[faces[i][0], 2] },
                             { vertices[faces[i][1], 0], vertices[faces[i][1], 1], vertices[faces[i][1], 2] },
@@ -178,31 +198,25 @@ namespace pixellab.Renderers
                             { vertices[faces[i][3], 0], vertices[faces[i][3], 1], vertices[faces[i][3], 2] }
                         };
 
-                        // القيام بالاستيفاء مباشرة في الفضاء ثلاثي الأبعاد لنحصل على أدق نقطة لونية (X, Y, Z) داخل المكعب
-                        double x3D = (1 - u) * ((1 - v) * faceVerts3D[0, 0] + v * faceVerts3D[3, 0]) + u * ((1 - v) * faceVerts3D[1, 0] + v * faceVerts3D[2, 0]);
-                        double y3D = (1 - u) * ((1 - v) * faceVerts3D[0, 1] + v * faceVerts3D[3, 1]) + u * ((1 - v) * faceVerts3D[1, 1] + v * faceVerts3D[2, 1]);
-                        double z3D = (1 - u) * ((1 - v) * faceVerts3D[0, 2] + v * faceVerts3D[3, 2]) + u * ((1 - v) * faceVerts3D[1, 2] + v * faceVerts3D[2, 2]);
+                        double x3D = (1 - uRatio) * ((1 - vRatio) * faceVerts3D[0, 0] + vRatio * faceVerts3D[3, 0]) + uRatio * ((1 - vRatio) * faceVerts3D[1, 0] + vRatio * faceVerts3D[2, 0]);
+                        double y3D = (1 - uRatio) * ((1 - vRatio) * faceVerts3D[0, 1] + vRatio * faceVerts3D[3, 1]) + uRatio * ((1 - vRatio) * faceVerts3D[1, 1] + vRatio * faceVerts3D[2, 1]);
+                        double z3D = (1 - uRatio) * ((1 - vRatio) * faceVerts3D[0, 2] + vRatio * faceVerts3D[3, 2]) + uRatio * ((1 - vRatio) * faceVerts3D[1, 2] + vRatio * faceVerts3D[2, 2]);
 
-                        // تحويل القيم الحسابية من النطاق [-50, 50] إلى النطاق اللوني [0, 255] بدقة مطلقة
-                        int r = (int)Math.Round(((x3D + 50.0) / 100.0) * 255.0);
-                        int gVal = (int)Math.Round(((y3D + 50.0) / 100.0) * 255.0);
-                        int b = (int)Math.Round(((z3D + 50.0) / 100.0) * 255.0);
+                        // فك التغليف العكسي باستخدام الـ Scale ونقطة التوسيط
+                        double finalU = x3D / SpaceScale;
+                        double finalY = (y3D / SpaceScale) + 127.5;
+                        double finalV = z3D / SpaceScale;
 
-                        return Color.FromArgb(
-                            Math.Max(0, Math.Min(255, r)),
-                            Math.Max(0, Math.Min(255, gVal)),
-                            Math.Max(0, Math.Min(255, b))
-                        );
+                        // استدعاء التابع العكسي الأصلي الخاص بكِ مباشرة ومستحيل يغلط!
+                        return YuvConverter.ToRgb(finalY, finalU, finalV);
                     }
                 }
             }
             return Color.Transparent;
         }
 
-        // 🌟 تابع حسابي متطور لإيجاد الإحداثيات الدقيقة للنقطة داخل المضلع الرباعي المنحرف ثلاثي الأبعاد
         private static double CalculateAdvancedBilinearRatio(Point pt, PointF p0, PointF p1, PointF p2, PointF p3, out double v)
         {
-            // إسقاط محلي مبني على مسافات النقطة التناسبية بالنسبة للمحاور الأربعة الملتوية هندسياً
             double d1 = DistanceToLine(pt, p0, p3);
             double d2 = DistanceToLine(pt, p1, p2);
             double u = (d1 + d2 > 0) ? d1 / (d1 + d2) : 0;

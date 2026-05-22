@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using pixellab.Renderers;
+using pixellab.Converters; // هنا السحر كله!
 
 namespace pixellab
 {
@@ -30,14 +31,14 @@ namespace pixellab
 
             panel3D.MouseWheel += Panel3D_MouseWheel;
 
-            // حساب التقرير للون الافتراضي عند الإقلاع
+            // حساب التقرير للون الافتراضي عند الإقلاع باستخدام الـ Converters تبعتك
             UpdateSyncReport(localSelectedColor);
         }
 
         private void InitializeComponentLayout()
         {
             this.Text = "مختبر الفضاءات اللونية التفاعلي ثلاثي الأبعاد - 3D Color Spaces Lab";
-            this.Size = new Size(1000, 680); // تكبير طفيف لاستيعاب بيانات التقرير الإضافية
+            this.Size = new Size(1000, 680); 
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = Color.FromArgb(25, 25, 25);
 
@@ -49,14 +50,13 @@ namespace pixellab
             listSystems.Font = new Font("Segoe UI", 11f, FontStyle.Bold);
             listSystems.BorderStyle = BorderStyle.None;
             
-            // 🌟 تحديث: إضافة Lab Space إلى القائمة الجانبية بشكل رسمي
-            listSystems.Items.AddRange(new object[] { "RGB Cube", "HSV Cone", "YCbCr Space", "Lab Space" });
+            listSystems.Items.AddRange(new object[] { "RGB Cube", "HSV Cone", "YCbCr Space", "YUV Space", "Lab Space", "CMYK Space" });
             listSystems.SelectedIndex = 0;
             listSystems.SelectedIndexChanged += ListSystems_SelectedIndexChanged;
 
             panel3D = new Panel();
             panel3D.Dock = DockStyle.Fill;
-            panel3D.BackColor = Color.FromArgb(20, 20, 20); // الخلفية الموحدة للواجهة
+            panel3D.BackColor = Color.FromArgb(20, 20, 20); 
             panel3D.Paint += Panel3D_Paint;
             panel3D.MouseDown += Panel3D_MouseDown;
             panel3D.MouseMove += Panel3D_MouseMove;
@@ -67,24 +67,21 @@ namespace pixellab
 
         private void UpdateSyncReport(Color targetColor)
         {
-            // 1. حساب قيم HSV
-            double h, s, v;
-            ColorToHsv(targetColor, out h, out s, out v);
-
-            // 2. حساب قيم YCbCr الأكاديمية
-            double y = 0.299 * targetColor.R + 0.587 * targetColor.G + 0.114 * targetColor.B;
-            double cb = 128 - 0.168736 * targetColor.R - 0.331264 * targetColor.G + 0.5 * targetColor.B;
-            double cr = 128 + 0.5 * targetColor.R - 0.418688 * targetColor.G - 0.081312 * targetColor.B;
-
-            // 3. 🌟 تحديث: حساب قيم CIELAB (Lab) اللحظية بدقة متناهية للمزامنة النصية
-            var lab = LocalRgbToLab(targetColor);
+            // استدعاء التوابع الجاهزة من الكلاسات الخاصة بكِ مباشرة بدون تكرار المعادلات
+            var hsv = HsvConverter.FromRgb(targetColor);
+            var ycbcr = YcbcrConverter.FromRgb(targetColor);
+            var yuv = YuvConverter.FromRgb(targetColor);
+            var lab = LabConverter.FromRgb(targetColor);
+            var cmyk = CmykConverter.FromRgb(targetColor);
 
             cachedReportText = $"📊 تقرير المزامنة اللحظي (3D Color Sync):\n" +
                                $"━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                                $"RGB   →  (R: {targetColor.R}, G: {targetColor.G}, B: {targetColor.B})\n\n" +
-                               $"HSV   →  (H: {h:0}°, S: {s * 100:0}%, V: {v * 100:0}%)\n\n" +
-                               $"YCbCr →  (Y: {y:0}, Cb: {cb:0}, Cr: {cr:0})\n\n" +
-                               $"Lab   →  (L*: {lab.L:0}, a*: {lab.A:0}, b*: {lab.B:0})";
+                               $"HSV   →  (H: {hsv.Hue:0}°, S: {hsv.Saturation * 100:0}%, V: {hsv.Value * 100:0}%)\n\n" +
+                               $"YCbCr →  (Y: {ycbcr.Y:0}, Cb: {ycbcr.Cb:0}, Cr: {ycbcr.Cr:0})\n\n" +
+                               $"YUV   →  (Y: {yuv.Y * 255:0}, U: {yuv.U:0.00}, V: {yuv.V:0.00})\n\n" + 
+                               $"Lab   →  (L*: {lab.L}, a*: {lab.A}, b*: {lab.B:0})\n\n" + 
+                               $"CMYK  →  (C: {cmyk.C * 100:0}%, M: {cmyk.M * 100:0}%, Y: {cmyk.Y * 100:0}%, K: {cmyk.K * 100:0}%)";
         }
 
         private void ListSystems_SelectedIndexChanged(object sender, EventArgs e)
@@ -103,23 +100,29 @@ namespace pixellab
                 if (selectedSystem == "RGB Cube")
                 {
                     RgbCubeRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor, localSelectedColor);
-                    RenderReportText(g);
                 }
                 else if (selectedSystem == "HSV Cone")
                 {
                     HsvConeRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor, localSelectedColor);
-                    RenderReportText(g);
                 }
                 else if (selectedSystem == "YCbCr Space")
                 {
                     YCbCrSpaceRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor, localSelectedColor);
-                    RenderReportText(g);
+                }
+                else if (selectedSystem == "YUV Space")
+                {
+                    YuvSpaceRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor, localSelectedColor);
                 }
                 else if (selectedSystem == "Lab Space")
                 {
-                    LabSpaceRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor, localSelectedColor);
-                    RenderReportText(g);
+                    LabRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor, localSelectedColor);
                 }
+                else if (selectedSystem == "CMYK Space")
+                {
+                    CmykRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor);
+                }
+
+                RenderReportText(g);
             }
             catch (Exception ex)
             {
@@ -153,11 +156,19 @@ namespace pixellab
                 }
                 else if (selectedSystem == "YCbCr Space")
                 {
-                    // 🌟 سيتم ربط تابع التقاط الماوس لـ YCbCr هنا في الخطوة القادمة
+                    pickedColor = YCbCrSpaceRenderer.GetColorAtPointDirect(e.Location, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor);
+                }
+                else if (selectedSystem == "YUV Space")
+                {
+                    pickedColor = YuvSpaceRenderer.GetColorAtPointDirect(e.Location, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor);
                 }
                 else if (selectedSystem == "Lab Space")
                 {
-                    // 🌟 سيتم ربط تابع التقاط الماوس لـ Lab هنا في الخطوة القادمة
+                    pickedColor = LabRenderer.GetColorAtPointDirect(e.Location, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor);
+                }
+                else if (selectedSystem == "CMYK Space")
+                {
+                    pickedColor = CmykRenderer.GetColorAtPointDirect(e.Location, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor);
                 }
 
                 if (pickedColor.ToArgb() != Color.Transparent.ToArgb())
@@ -191,42 +202,6 @@ namespace pixellab
 
             zoomFactor = Math.Max(0.3f, Math.Min(3.0f, zoomFactor)); 
             panel3D.Invalidate();
-        }
-
-        private void ColorToHsv(Color color, out double hue, out double sat, out double val)
-        {
-            int max = Math.Max(color.R, Math.Max(color.G, color.B));
-            int min = Math.Min(color.R, Math.Min(color.G, color.B));
-
-            hue = color.GetHue();
-            sat = (max == 0) ? 0 : 1d - (1d * min / max);
-            val = max / 255d;
-        }
-
-        // 🌟 تابع داخلي مساعد لحساب قيم Lab للتقرير النصي دون التضارب مع كلاسات الـ Renderers
-        private (double L, double A, double B) LocalRgbToLab(Color c)
-        {
-            double r = c.R / 255.0;
-            double g = c.G / 255.0;
-            double b = c.B / 255.0;
-
-            r = (r > 0.04045) ? Math.Pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-            g = (g > 0.04045) ? Math.Pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-            b = (b > 0.04045) ? Math.Pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
-
-            double x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
-            double y = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 1.00000;
-            double z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
-
-            x = (x > 0.008856) ? Math.Pow(x, 1.0 / 3.0) : (7.787 * x) + (16.0 / 116.0);
-            y = (y > 0.008856) ? Math.Pow(y, 1.0 / 3.0) : (7.787 * y) + (16.0 / 116.0);
-            z = (z > 0.008856) ? Math.Pow(z, 1.0 / 3.0) : (7.787 * z) + (16.0 / 116.0);
-
-            double L = (116.0 * y) - 16.0;
-            double A = 500.0 * (x - y);
-            double B = 200.0 * (y - z);
-
-            return (L, A, B);
         }
     }
 }

@@ -259,9 +259,9 @@
             //
             // panelInspector
             //
-            this.panelInspector.BackColor = Color.FromArgb(35, 35, 35);
+            this.panelInspector.BackColor = Color.FromArgb(35, 70, 35);
 
-            this.panelInspector.Size = new Size(240, 220);
+            this.panelInspector.Size = new Size(280, 470);
 
             this.panelInspector.Location = new Point(20, 20);
 
@@ -282,7 +282,7 @@
                 new Point(20, 90);
 
             this.lblInspectorInfo.Size =
-                new Size(200, 100);
+                new Size(300, 500);
 
             this.lblInspectorInfo.Text =
                 "No color selected";

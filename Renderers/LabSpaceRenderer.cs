@@ -2,154 +2,125 @@ using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Collections.Generic;
+using pixellab.Converters;
 
 namespace pixellab.Renderers
 {
-    public class LabColor
+    public static class LabRenderer
     {
-        public double L { get; set; }
-        public double A { get; set; }
-        public double B { get; set; }
+        private const int L_Steps = 15;   // زيادة الخطوات لنعومة أكثر
+        private const int Segments = 30;  // دقة دائرية أعلى
 
-        public LabColor(double l, double a, double b)
+        // كلاس داخلي صغير لحفظ بيانات الوجه وعمقه قبل الرسم
+        private class LabFace
         {
-            L = l;
-            A = a;
-            B = b;
+            public PointF[] Points { get; set; }
+            public Color FaceColor { get; set; }
+            public double AverageDepth { get; set; }
+
+            public (double L, double a, double b)[] LabVertices { get; set; }
         }
-    }
 
-    public struct LabMeshFace
-    {
-        public PointF P1, P2, P3, P4;
-        public Color FaceColor;
-        public double AvgDepth;
-    }
-
-    public static class LabSpaceRenderer
-    {
+        // دالة إسقاط محدثة ترجع النقطة ثنائية الأبعاد مع عمقها الـ Z
         private static (PointF Point, double ZDepth) ProjectWithDepth(double x, double y, double z, int cx, int cy, double angleX, double angleY, float zoom)
         {
-            double radX = angleX * Math.PI / 180.0;
+            double radX = angleX * Math.PI / 180.0; 
             double radY = angleY * Math.PI / 180.0;
-
+            
             double cosX = Math.Cos(radX), sinX = Math.Sin(radX);
             double cosY = Math.Cos(radY), sinY = Math.Sin(radY);
-
-            // تدوير فضاء ثلاثي الأبعاد
+            
             double rY = y * cosX - z * sinX;
             double rZ = y * sinX + z * cosX;
             double rX = x * cosY + rZ * sinY;
-            double depthZ = -x * sinY + rZ * cosY;
+            
+            // حساب العمق الفعلي للنقطة بالنسبة لعين المشاهد
+            double depthZ = -x * sinY + rZ * cosY; 
 
-            // تحجيم وتكبير متناسق لإبراز التواء المجسم وشطحاته الجانبية الأكاديمية
-            float screenX = (float)(cx + rX * 2.8 * zoom);
-            float screenY = (float)(cy - rY * 2.8 * zoom);
-
-            return (new PointF(screenX, screenY), depthZ);
+            return (new PointF((float)(cx + rX * zoom), (float)(cy - rY * zoom)), depthZ);
         }
 
         public static void Render(Graphics g, int width, int height, double angleX, double angleY, float zoom, Color selectedColor)
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
-
             int cx = width / 2;
             int cy = height / 2;
 
-            // 🌟 استراتيجية بناء القشرة الخارجية لمكعب RGB داخل فضاء Lab ليعطي الالتواء والانحناء الحقيقي مية بالمية
-            int steps = 15; // دقة التقسيم الشبكي للمجسم
-            List<LabMeshFace> meshFaces = new List<LabMeshFace>();
+            // قائمة لتجميع كافة أوجه المغزل قبل رندرتها
+            List<LabFace> facesList = new List<LabFace>();
 
-            // دالة مساعدة لتوليد الأوجه الخارجية فقط عبر مسح الأسطح الستة لمكعب الألوان
-            Action<int, int, int, int, int, int> buildFace = (rStart, rEnd, gStart, gEnd, bStart, bEnd) =>
+            for (int i = 0; i < L_Steps; i++)
             {
-                for (int i = 0; i < steps; i++)
+                for (int j = 0; j < Segments; j++)
                 {
-                    for (int j = 0; j < steps; j++)
+                    int nextJ = (j + 1) % Segments;
+                    
+                    var l1 = GetLabAt(i, j);
+                    var l2 = GetLabAt(i, nextJ);
+                    var l3 = GetLabAt(i + 1, nextJ);
+                    var l4 = GetLabAt(i + 1, j);
+
+                    // حساب النقاط والعمق لكل رأس من رؤوس الوجه الرباعي
+                    var proj0 = ProjectWithDepth(l1.a, l1.L - 50, l1.b, cx, cy, angleX, angleY, zoom);
+                    var proj1 = ProjectWithDepth(l2.a, l2.L - 50, l2.b, cx, cy, angleX, angleY, zoom);
+                    var proj2 = ProjectWithDepth(l3.a, l3.L - 50, l3.b, cx, cy, angleX, angleY, zoom);
+                    var proj3 = ProjectWithDepth(l4.a, l4.L - 50, l4.b, cx, cy, angleX, angleY, zoom);
+
+                    // حساب متوسط عمق الوجه بالكامل
+                    double avgDepth = (proj0.ZDepth + proj1.ZDepth + proj2.ZDepth + proj3.ZDepth) / 4.0;
+
+                    // استخراج اللون للوجه بناءً على إحداثيات Lab الوسطية
+                    Color faceColor = LabConverter.ToRgb((l1.L + l3.L) / 2, (l1.a + l3.a) / 2, (l1.b + l3.b) / 2);
+
+                    facesList.Add(new LabFace
                     {
-                        // حساب إحداثيات الزوايا الأربعة لكل مربع صغير على القشرة الخارجية
-                        Color c1 = GetMeshColor(i, j, steps, rStart, rEnd, gStart, gEnd, bStart, bEnd);
-                        Color c2 = GetMeshColor(i + 1, j, steps, rStart, rEnd, gStart, gEnd, bStart, bEnd);
-                        Color c3 = GetMeshColor(i + 1, j + 1, steps, rStart, rEnd, gStart, gEnd, bStart, bEnd);
-                        Color c4 = GetMeshColor(i, j + 1, steps, rStart, rEnd, gStart, gEnd, bStart, bEnd);
+                        Points = new PointF[] { proj0.Point, proj1.Point, proj2.Point, proj3.Point },
+                        FaceColor = faceColor,
+                        AverageDepth = avgDepth,
+                        LabVertices = new (double L, double a, double b)[] { l1, l2, l3, l4 }
+                    });
+                    // 1. تحويل اللون المختار إلى إحداثيات Lab
+                    var lab = LabConverter.FromRgb(selectedColor);
 
-                        var lab1 = RgbToLabInternal(c1);
-                        var lab2 = RgbToLabInternal(c2);
-                        var lab3 = RgbToLabInternal(c3);
-                        var lab4 = RgbToLabInternal(c4);
+                    // 2. مطابقة معادلة الموقع (Mapping) مع نفس منطق دالة GetLabAt
+                    // بما أنكِ في GetLabAt استخدمتِ: Radius = Sin(...) * 80.0
+                    double radius = Math.Sin(lab.L / 100.0 * Math.PI) * 80.0;
+                    double angle = Math.Atan2(lab.B, lab.A); // الـ B هي المحور الثالث في Lab
 
-                        // إسقاط النقاط هندسياً (X=a, Y=b, Z=L) متمحوراً حول المنتصف
-                        var p1 = ProjectWithDepth(lab1.A, lab1.B, lab1.L - 50.0, cx, cy, angleX, angleY, zoom);
-                        var p2 = ProjectWithDepth(lab2.A, lab2.B, lab2.L - 50.0, cx, cy, angleX, angleY, zoom);
-                        var p3 = ProjectWithDepth(lab3.A, lab3.B, lab3.L - 50.0, cx, cy, angleX, angleY, zoom);
-                        var p4 = ProjectWithDepth(lab4.A, lab4.B, lab4.L - 50.0, cx, cy, angleX, angleY, zoom);
+                    double xPos = radius * Math.Cos(angle);
+                    double zPos = radius * Math.Sin(angle);
+                    double yPos = lab.L - 50; 
 
-                        double avgDepth = (p1.ZDepth + p2.ZDepth + p3.ZDepth + p4.ZDepth) / 4.0;
+                    var target = ProjectWithDepth(xPos, yPos, zPos, cx, cy, angleX, angleY, zoom);
 
-                        meshFaces.Add(new LabMeshFace
-                        {
-                            P1 = p1.Point, P2 = p2.Point, P3 = p3.Point, P4 = p4.Point,
-                            FaceColor = c1,
-                            AvgDepth = avgDepth
-                        });
-                    }
-                }
-            };
+                    // 4. رسم المؤشر الذهبي (بشرط أن يكون داخل حدود الرؤية)
+                    using (Brush b = new SolidBrush(selectedColor))
+                        g.FillEllipse(b, target.Point.X - 7, target.Point.Y - 7, 14, 14);
 
-            // بناء الأوجه الستة المحيطية للمكعب لتوليد الانحناء الحقيقي الفخم للاب
-            buildFace(0, 255, 0, 255, 0, 0);     // السطح السفلي (الأسود والأزرق والأخضر)
-            buildFace(0, 255, 0, 255, 255, 255); // السطح العلوي
-            buildFace(0, 0, 0, 255, 0, 255);     // الجوانب المحيطية
-            buildFace(255, 255, 0, 255, 0, 255);
-            buildFace(0, 255, 0, 0, 0, 255);
-            buildFace(0, 255, 255, 255, 0, 255);
-
-            // ترتيب الأوجه بالعمق (Painter's Algorithm) لمنع أي تداخل بصري أثناء الدوران والتصفح
-            meshFaces.Sort((f1, f2) => f1.AvgDepth.CompareTo(f2.AvgDepth));
-
-            // رسم الأوجه المنحنية الحقيقية الملتفة
-            foreach (var face in meshFaces)
-            {
-                PointF[] pts = { face.P1, face.P2, face.P3, face.P4 };
-                using (GraphicsPath path = new GraphicsPath())
-                {
-                    path.AddPolygon(pts);
-                    using (SolidBrush br = new SolidBrush(Color.FromArgb(235, face.FaceColor)))
-                    {
-                        g.FillPolygon(br, pts);
-                    }
-                }
-
-                // خطوط الهيكل الشبكي الأكاديمي لإبراز التواء المجسم الفريد وميلانه
-                using (Pen gridPen = new Pen(Color.FromArgb(25, Color.White), 1f))
-                {
-                    g.DrawPolygon(gridPen, pts);
+                    using (Pen goldPen = new Pen(Color.Gold, 2f))
+                        g.DrawEllipse(goldPen, target.Point.X - 9, target.Point.Y - 9, 18, 18);
                 }
             }
 
-            // 🌟 2. مزامنة موقع المؤشر اللحظي الذهبي بداخل مجسم الـ Lab الملتف الحقيقي
-            LabColor myLab = RgbToLabInternal(selectedColor);
-            double targetX = myLab.A;
-            double targetY = myLab.B;
-            double targetZ = myLab.L - 50.0;
+            // السحر هنا: فرز الأوجه من الأبعد إلى الأقرب (من العمق الأصغر للأكبر)
+            facesList.Sort((a, b) => a.AverageDepth.CompareTo(b.AverageDepth));
 
-            var targetProj = ProjectWithDepth(targetX, targetY, targetZ, cx, cy, angleX, angleY, zoom);
-            PointF targetPt = targetProj.Point;
-
-            using (Brush bBrush = new SolidBrush(selectedColor)) g.FillEllipse(bBrush, targetPt.X - 7, targetPt.Y - 7, 14, 14);
-            using (Pen goldPen = new Pen(Color.Gold, 2f)) g.DrawEllipse(goldPen, targetPt.X - 9, targetPt.Y - 9, 18, 18);
-        }
-
-        private static Color GetMeshColor(int i, int j, int steps, int rS, int rE, int gS, int gE, int bS, int bE)
-        {
-            int r = rS + (rE - rS) * i / steps;
-            int g = gS + (gE - gS) * j / steps;
-            int b = bS + (bE - bS) * i / steps;
-            
-            if (rS == rE && gS != gE && bS != bE) b = bS + (bE - bS) * j / steps;
-            if (gS == gE && rS != rE && bS != bE) b = bS + (bE - bS) * j / steps;
-
-            return Color.FromArgb(Math.Max(0, Math.Min(255, r)), Math.Max(0, Math.Min(255, g)), Math.Max(0, Math.Min(255, b)));
+            // الآن نرسم الأوجه بالترتيب الصحيح لكي تحجب الأوجه الأمامية الأوجه الخلفية بشكل طبيعي
+            foreach (var face in facesList)
+            {
+                using (GraphicsPath path = new GraphicsPath())
+                {
+                    path.AddPolygon(face.Points);
+                    using (SolidBrush b = new SolidBrush(face.FaceColor))
+                    {
+                        g.FillPath(b, path);
+                    }
+                    using (Pen p = new Pen(Color.FromArgb(20, Color.White), 0.2f))
+                    {
+                        g.DrawPath(p, path);
+                    }
+                }
+            }
         }
 
         public static Color GetColorAtPointDirect(Point mousePt, int width, int height, double angleX, double angleY, float zoom)
@@ -157,59 +128,100 @@ namespace pixellab.Renderers
             int cx = width / 2;
             int cy = height / 2;
 
-            double minDistance = double.MaxValue;
-            Color bestColor = Color.Transparent;
-
-            // مسح ذكي وسريع لالتقاط الماوس المتزامن داخل المنحنى الحقيقي
-            for (int r = 0; r <= 255; r += 12)
+            // سنقوم بإعادة بناء الأوجه محلياً هنا باستخدام نفس المنطق الموجود في Render
+            for (int i = 0; i < L_Steps; i++)
             {
-                for (int gVal = 0; gVal <= 255; gVal += 12)
+                for (int j = 0; j < Segments; j++)
                 {
-                    for (int b = 0; b <= 255; b += 12)
+                    int nextJ = (j + 1) % Segments;
+                    
+                    // استدعاء دالتك الأصلية التي تولد الإحداثيات
+                    var l1 = GetLabAt(i, j); 
+                    var l2 = GetLabAt(i, nextJ);
+                    var l3 = GetLabAt(i + 1, nextJ);
+                    var l4 = GetLabAt(i + 1, j);
+
+                    // استخدام دالة الإسقاط التي أرسلتِها أنتِ للتو
+                    var p0 = ProjectWithDepth(l1.a, l1.L - 50, l1.b, cx, cy, angleX, angleY, zoom);
+                    var p1 = ProjectWithDepth(l2.a, l2.L - 50, l2.b, cx, cy, angleX, angleY, zoom);
+                    var p2 = ProjectWithDepth(l3.a, l3.L - 50, l3.b, cx, cy, angleX, angleY, zoom);
+                    var p3 = ProjectWithDepth(l4.a, l4.L - 50, l4.b, cx, cy, angleX, angleY, zoom);
+
+                    // فحص المثلث الأول (p0, p1, p2)
+                    if (IsMouseInTriangle(mousePt, p0.Point, p1.Point, p2.Point))
                     {
-                        Color c = Color.FromArgb(r, gVal, b);
-                        var lab = RgbToLabInternal(c);
-
-                        var proj = ProjectWithDepth(lab.A, lab.B, lab.L - 50.0, cx, cy, angleX, angleY, zoom);
-
-                        double dx = mousePt.X - proj.Point.X;
-                        double dy = mousePt.Y - proj.Point.Y;
-                        double dist = dx * dx + dy * dy;
-
-                        if (dist < minDistance && dist < 140)
-                        {
-                            minDistance = dist;
-                            bestColor = c;
-                        }
+                        return LabConverter.ToRgb((l1.L + l2.L + l3.L)/3, (l1.a + l2.a + l3.a)/3, (l1.b + l2.b + l3.b)/3);
+                    }
+                    
+                    // فحص المثلث الثاني (p0, p2, p3)
+                    if (IsMouseInTriangle(mousePt, p0.Point, p2.Point, p3.Point))
+                    {
+                        return LabConverter.ToRgb((l1.L + l3.L + l4.L)/3, (l1.a + l3.a + l4.a)/3, (l1.b + l3.b + l4.b)/3);
                     }
                 }
             }
-            return bestColor;
+            return Color.Transparent;
         }
 
-        private static LabColor RgbToLabInternal(Color c)
+        // دالة مساعدة بسيطة جداً لفحص الماوس
+        private static bool IsMouseInTriangle(Point p, PointF a, PointF b, PointF c)
         {
-            double r = c.R / 255.0;
-            double g = c.G / 255.0;
-            double b = c.B / 255.0;
+            using (GraphicsPath path = new GraphicsPath())
+            {
+                path.AddPolygon(new PointF[] { a, b, c });
+                return path.IsVisible(p);
+            }
+        }
+        // دالة مساعدة لحساب أوزان الباري سنتريك
+        private static void CalculateBarycentric(Point p, PointF a, PointF b, PointF c, out double w0, out double w1, out double w2)
+        {
+            double det = (b.Y - c.Y) * (a.X - c.X) + (c.X - b.X) * (a.Y - c.Y);
+            if (Math.Abs(det) < 0.0001) { w0 = 1.0/3.0; w1 = 1.0/3.0; w2 = 1.0/3.0; return; }
+            w0 = ((b.Y - c.Y) * (p.X - c.X) + (c.X - b.X) * (p.Y - c.Y)) / det;
+            w1 = ((c.Y - a.Y) * (p.X - c.X) + (a.X - c.X) * (p.Y - c.Y)) / det;
+            w2 = 1.0 - w0 - w1;
+        }
+        // دالة مساعدة لحساب الاستيفاء بدقة
+        private static (bool IsInside, double w1, double w2, double w3) GetBarycentricInterpolation(Point p, PointF a, PointF b, PointF c)
+        {
+            double det = (b.Y - c.Y) * (a.X - c.X) + (c.X - b.X) * (a.Y - c.Y);
+            double w1 = ((b.Y - c.Y) * (p.X - c.X) + (c.X - b.X) * (p.Y - c.Y)) / det;
+            double w2 = ((c.Y - a.Y) * (p.X - c.X) + (a.X - c.X) * (p.Y - c.Y)) / det;
+            double w3 = 1 - w1 - w2;
+            return (w1 >= 0 && w2 >= 0 && w3 >= 0, w1, w2, w3);
+        }
 
-            r = (r > 0.04045) ? Math.Pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-            g = (g > 0.04045) ? Math.Pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-            b = (b > 0.04045) ? Math.Pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+        private static Color InterpolateColor((bool IsInside, double w1, double w2, double w3) bary, (double L, double a, double b) v1, (double L, double a, double b) v2, (double L, double a, double b) v3)
+        {
+            double L = bary.w1 * v1.L + bary.w2 * v2.L + bary.w3 * v3.L;
+            double a = bary.w1 * v1.a + bary.w2 * v2.a + bary.w3 * v3.a;
+            double b_val = bary.w1 * v1.b + bary.w2 * v2.b + bary.w3 * v3.b;
+            return LabConverter.ToRgb(L, a, b_val);
+        }
 
-            double x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
-            double y = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 1.00000;
-            double z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
+        private static (double L, double a, double b) GetLabAt(int i, int j)
+        {
+            double L = i * (100.0 / L_Steps);
+            // المعادلة المورفولوجية الرائعة التي ابتكرتِها للشكل المغزلي المتناسق
+            double radius = Math.Sin(i * Math.PI / L_Steps) * 80.0;
+            double angle = j * (360.0 / Segments) * Math.PI / 180.0;
+            return (L, radius * Math.Cos(angle), radius * Math.Sin(angle));
+        }
 
-            x = (x > 0.008856) ? Math.Pow(x, 1.0 / 3.0) : (7.787 * x) + (16.0 / 116.0);
-            y = (y > 0.008856) ? Math.Pow(y, 1.0 / 3.0) : (7.787 * y) + (16.0 / 116.0);
-            z = (z > 0.008856) ? Math.Pow(z, 1.0 / 3.0) : (7.787 * z) + (16.0 / 116.0);
+        private static double CalculateAdvancedBilinearRatio(Point pt, PointF p0, PointF p1, PointF p2, PointF p3, out double v)
+        {
+            double d1 = DistanceToLine(pt, p0, p3); double d2 = DistanceToLine(pt, p1, p2);
+            double u = (d1 + d2 > 0) ? d1 / (d1 + d2) : 0;
+            double d3 = DistanceToLine(pt, p0, p1); double d4 = DistanceToLine(pt, p3, p2);
+            v = (d3 + d4 > 0) ? d3 / (d3 + d4) : 0;
+            return u;
+        }
 
-            double L = (116.0 * y) - 16.0;
-            double A = 500.0 * (x - y);
-            double B = 200.0 * (y - z);
-
-            return new LabColor(L, A, B);
+        private static double DistanceToLine(Point p, PointF l1, PointF l2)
+        {
+            double num = Math.Abs((l2.Y - l1.Y) * p.X - (l2.X - l1.X) * p.Y + l2.X * l1.Y - l2.Y * l1.X);
+            double den = Math.Sqrt(Math.Pow(l2.Y - l1.Y, 2) + Math.Pow(l2.X - l1.X, 2));
+            return den == 0 ? 0 : num / den;
         }
     }
 }
