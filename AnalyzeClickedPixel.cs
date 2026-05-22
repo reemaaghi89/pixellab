@@ -5,7 +5,7 @@ using pixellab.Converters;
 
 namespace pixellab
 {
-    public static class ColorAnalyzer
+    public static class AnalyzeClickedPixelClass
     {
         // تابع خارجي شامل: يحسب الإحداثيات، يحدد البكسل، ويولد التقرير الشامل
         public static (Color? SelectedColor, string Report) AnalyzeClickedPixel(

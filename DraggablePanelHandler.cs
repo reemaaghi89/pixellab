@@ -9,7 +9,6 @@ namespace pixellab
         private Point _dragCursorPoint;
         private Point _dragPanelPoint;
         private readonly Control _targetControl;
-
         public DraggablePanelHandler(Control targetControl)
         {
             _targetControl = targetControl;
@@ -33,7 +32,6 @@ namespace pixellab
                 _targetControl.Location = Point.Add(_dragPanelPoint, new Size(difference));
             }
         }
-
         private void OnMouseUp(object sender, MouseEventArgs e)
         {
             _isDragging = false;

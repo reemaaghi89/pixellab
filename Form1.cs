@@ -196,19 +196,12 @@ namespace pixellab
         {
             if (pictureBox1.Image == null || currentImage == null) return;
 
-            // 🌟 استدعاء السطر السحري الشامل من ملف التحليل الخارجي
-            var (selectedColor, infoReport) = ColorAnalyzer.AnalyzeClickedPixel(currentImage, pictureBox1.Width, pictureBox1.Height, e);
-            // إذا نجح التحليل والتقطنا لوناً حقيقياً داخل حدود الصورة
+            var (selectedColor, infoReport) = AnalyzeClickedPixelClass.AnalyzeClickedPixel(currentImage, pictureBox1.Width, pictureBox1.Height, e);
             if (selectedColor.HasValue)
             {
                 Color pixelColor = selectedColor.Value;
                 panelSelectedColor.BackColor = pixelColor;
-                selectedPixelColor = pixelColor; // تحديث اللون العام للمكعب
-
-                // مزامنة الـ Trackbars على اليمين تلقائياً
-
-
-                // تحديث لوحة رسم مكعب الألوان فوراً ليتحرك المؤشر المشع
+                selectedPixelColor = pixelColor;
                 panelCube.Invalidate();
 
                 panelSelectedColor.BackColor = pixelColor;
@@ -246,6 +239,9 @@ namespace pixellab
             currentImage = ImageProcessor.ConvertToBlackAndWhite((Bitmap)currentImage);
             pictureBox1.Image = currentImage;
         }
+
+
+//==========================================================
 
         private void ChannelTrackChanged(object sender,EventArgs e)
         {
