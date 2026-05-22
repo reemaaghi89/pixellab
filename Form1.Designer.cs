@@ -42,10 +42,19 @@
             this.chkGreen = new System.Windows.Forms.CheckBox();
             this.chkBlue = new System.Windows.Forms.CheckBox();
             this.lblInfo = new System.Windows.Forms.Label();
+            this.panelSelectedColor = new System.Windows.Forms.Panel();
             this.btnGray = new System.Windows.Forms.Button();
             this.btnQuantize = new System.Windows.Forms.Button();
             this.btn = new System.Windows.Forms.Button();
             this.btnOpen3DLab = new System.Windows.Forms.Button();
+            this.panelSidebar = new System.Windows.Forms.Panel();
+            this.panelMain = new System.Windows.Forms.Panel();
+            this.panelTop = new System.Windows.Forms.Panel();
+            this.flowSidebar = new System.Windows.Forms.FlowLayoutPanel();
+            this.panelInspector = new System.Windows.Forms.Panel();
+            this.panelSelectedColor = new System.Windows.Forms.Panel();
+            this.lblInspectorInfo = new System.Windows.Forms.Label();
+            this.SuspendLayout();
             // تهيئة أداة البانل الجديدة للمكعب هنا
             this.panelCube = new System.Windows.Forms.Panel();
 
@@ -53,14 +62,12 @@
             ((System.ComponentModel.ISupportInitialize)(this.trackRed)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackGreen)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBlue)).BeginInit();
-            this.SuspendLayout();
             // 
             // pictureBox1
             // 
             this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox1.Location = new System.Drawing.Point(20, 20);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(700, 500);
+            this.pictureBox1.Dock = DockStyle.Fill;
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.pictureBox1.TabIndex = 0;
             this.pictureBox1.TabStop = false;
@@ -69,48 +76,41 @@
             // 
             // btnopen
             // 
-            this.btnopen.Location = new System.Drawing.Point(760, 40);
             this.btnopen.Name = "btnopen";
             this.btnopen.Size = new System.Drawing.Size(120, 40);
             this.btnopen.TabIndex = 1;
             this.btnopen.Text = "open Image";
-            this.btnopen.UseVisualStyleBackColor = true;
             this.btnopen.Click += new System.EventHandler(this.btnopen_Click);
             // 
             // btnsave
             // 
-            this.btnsave.Location = new System.Drawing.Point(760, 100);
             this.btnsave.Name = "btnsave";
             this.btnsave.Size = new System.Drawing.Size(120, 40);
             this.btnsave.TabIndex = 2;
             this.btnsave.Text = "save Image";
-            this.btnsave.UseVisualStyleBackColor = true;
             this.btnsave.Click += new System.EventHandler(this.btnsave_Click);
             // 
             // btnReset
             // 
-            this.btnReset.Location = new System.Drawing.Point(760, 160);
             this.btnReset.Name = "btnReset";
             this.btnReset.Size = new System.Drawing.Size(120, 40);
             this.btnReset.TabIndex = 3;
             this.btnReset.Text = "Reset";
-            this.btnReset.UseVisualStyleBackColor = true;
             this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
             // 
             // trackRed
             // 
-            this.trackRed.Location = new System.Drawing.Point(760, 280);
+            this.trackRed.Width = 200;
             this.trackRed.Maximum = 255;
             this.trackRed.Minimum = -255;
             this.trackRed.Name = "trackRed";
-            this.trackRed.Size = new System.Drawing.Size(300, 45);
+            this.trackRed.Size = new System.Drawing.Size(200, 45);
             this.trackRed.TabIndex = 4;
             this.trackRed.Scroll += new System.EventHandler(this.trackRed_Scroll);
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(749, 224);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(69, 13);
             this.label1.TabIndex = 5;
@@ -118,28 +118,27 @@
             // 
             // trackGreen
             // 
-            this.trackGreen.Location = new System.Drawing.Point(760, 380);
+            this.trackGreen.Width = 200;
             this.trackGreen.Maximum = 255;
             this.trackGreen.Minimum = -255;
             this.trackGreen.Name = "trackGreen";
-            this.trackGreen.Size = new System.Drawing.Size(300, 45);
+            this.trackGreen.Size = new System.Drawing.Size(200, 45);
             this.trackGreen.TabIndex = 6;
             this.trackGreen.Scroll += new System.EventHandler(this.trackGreen_Scroll);
             // 
             // trackBlue
             // 
-            this.trackBlue.Location = new System.Drawing.Point(760, 480);
+            this.trackBlue.Width = 200;
             this.trackBlue.Maximum = 255;
             this.trackBlue.Minimum = -255;
             this.trackBlue.Name = "trackBlue";
-            this.trackBlue.Size = new System.Drawing.Size(300, 45);
+            this.trackBlue.Size = new System.Drawing.Size(200, 45);
             this.trackBlue.TabIndex = 7;
             this.trackBlue.Scroll += new System.EventHandler(this.trackBlue_Scroll);
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(752, 332);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(78, 13);
             this.label2.TabIndex = 8;
@@ -148,7 +147,6 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(752, 432);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(70, 13);
             this.label3.TabIndex = 9;
@@ -157,95 +155,156 @@
             // chkRed
             // 
             this.chkRed.AutoSize = true;
-            this.chkRed.Location = new System.Drawing.Point(760, 532);
             this.chkRed.Name = "chkRed";
             this.chkRed.Size = new System.Drawing.Size(84, 17);
             this.chkRed.TabIndex = 10;
             this.chkRed.Text = "Disable Red";
-            this.chkRed.UseVisualStyleBackColor = true;
             this.chkRed.CheckedChanged += new System.EventHandler(this.chkRed_CheckedChanged);
             // 
             // chkGreen
             // 
             this.chkGreen.AutoSize = true;
-            this.chkGreen.Location = new System.Drawing.Point(760, 555);
             this.chkGreen.Name = "chkGreen";
             this.chkGreen.Size = new System.Drawing.Size(93, 17);
             this.chkGreen.TabIndex = 11;
             this.chkGreen.Text = "Disable Green";
-            this.chkGreen.UseVisualStyleBackColor = true;
             this.chkGreen.CheckedChanged += new System.EventHandler(this.chkGreen_CheckedChanged);
             // 
             // chkBlue
             // 
             this.chkBlue.AutoSize = true;
-            this.chkBlue.Location = new System.Drawing.Point(760, 578);
             this.chkBlue.Name = "chkBlue";
             this.chkBlue.Size = new System.Drawing.Size(85, 17);
             this.chkBlue.TabIndex = 12;
             this.chkBlue.Text = "Disable Blue";
-            this.chkBlue.UseVisualStyleBackColor = true;
             this.chkBlue.CheckedChanged += new System.EventHandler(this.chkBlue_CheckedChanged);
             // 
             // lblInfo
             // 
             this.lblInfo.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.lblInfo.Location = new System.Drawing.Point(420, 532);
             this.lblInfo.Name = "lblInfo";
-            this.lblInfo.Size = new System.Drawing.Size(300, 120);
+            this.lblInfo.Size = new System.Drawing.Size(200, 120);
             this.lblInfo.TabIndex = 13;
             this.lblInfo.Text = "label4";
+            //
+            // panelSelectedColor
+            //
+            this.panelSelectedColor.Size = new System.Drawing.Size(200, 50);
+
+            this.panelSelectedColor.BackColor = Color.Black;
+
+            this.panelSelectedColor.BorderStyle = BorderStyle.FixedSingle;
+
+            this.panelSelectedColor.Margin = new Padding(5);
             // 
             // btnGray
             // 
-            this.btnGray.Location = new System.Drawing.Point(317, 555);
             this.btnGray.Name = "btnGray";
-            this.btnGray.Size = new System.Drawing.Size(75, 23);
+            this.btnGray.Size = new System.Drawing.Size(200, 40);
             this.btnGray.TabIndex = 14;
             this.btnGray.Text = "Black&White";
-            this.btnGray.UseVisualStyleBackColor = true;
             this.btnGray.Click += new System.EventHandler(this.btnConvertBlackAndWhite_Click);
             // 
             // btnQuantize
             // 
-            this.btnQuantize.Location = new System.Drawing.Point(317, 603);
             this.btnQuantize.Name = "btnQuantize";
-            this.btnQuantize.Size = new System.Drawing.Size(80, 30);
+            this.btnQuantize.Size = new System.Drawing.Size(200, 40);
             this.btnQuantize.TabIndex = 15;
             this.btnQuantize.Text = "ReduceColors";
-            this.btnQuantize.UseVisualStyleBackColor = true;
             this.btnQuantize.Click += new System.EventHandler(this.btnQuantizeColors_Click);
             // 
             // btn
             // 
-            this.btn.Location = new System.Drawing.Point(214, 532);
             this.btn.Name = "btn";
-            this.btn.Size = new System.Drawing.Size(75, 23);
+            this.btn.Size = new System.Drawing.Size(200, 40);
             this.btn.TabIndex = 16;
             this.btn.Text = "Gray scale";
-            this.btn.UseVisualStyleBackColor = true;
             this.btn.Click += new System.EventHandler(this.btnConvertGrayscale_Click);
             // 
             // panelCube
             // 
-            this.btnOpen3DLab.Location = new System.Drawing.Point(760, 12); // قعد فوق الأزرار تماماً وبشكل أنيق
             this.btnOpen3DLab.Name = "btnOpen3DLab";
-            this.btnOpen3DLab.Size = new System.Drawing.Size(120, 25);
+            this.btnOpen3DLab.Size = new System.Drawing.Size(200, 40);
             this.btnOpen3DLab.TabIndex = 18;
             this.btnOpen3DLab.Text = "🚀 3D Lab";
-            this.btnOpen3DLab.UseVisualStyleBackColor = true;
             this.btnOpen3DLab.Click += new System.EventHandler(this.btnOpen3DLab_Click);
 
 
 
             this.panelCube.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.panelCube.Location = new System.Drawing.Point(20, 532);
             this.panelCube.Name = "panelCube";
             this.panelCube.Size = new System.Drawing.Size(180, 120);
             this.panelCube.TabIndex = 17;
-            this.panelCube.Paint += new System.Windows.Forms.PaintEventHandler(this.panelCube_Paint);
-            this.panelCube.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelCube_MouseDown);
-            this.panelCube.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelCube_MouseMove);
+
+
+            //
+            // panelSidebar
+            //
+            this.panelSidebar.Dock = System.Windows.Forms.DockStyle.Left;
+            this.panelSidebar.Width = 250;
+            this.panelSidebar.BackColor = Color.FromArgb(28, 28, 28);
+
+            //
+            // panelTop
+            //
+            this.panelTop.Dock = System.Windows.Forms.DockStyle.Top;
+            this.panelTop.Height = 60;
+            this.panelTop.BackColor = Color.FromArgb(35, 35, 35);
+
+            //
+            // panelMain
+            //
+            this.panelMain.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panelMain.BackColor = Color.FromArgb(20, 20, 20);
+            //
+            // panelInspector
+            //
+            this.panelInspector.BackColor = Color.FromArgb(35, 35, 35);
+
+            this.panelInspector.Size = new Size(240, 220);
+
+            this.panelInspector.Location = new Point(20, 20);
+
+            this.panelInspector.BorderStyle = BorderStyle.None;
+            this.panelInspector.Padding = new Padding(10);
+            this.panelInspector.Controls.Add(this.panelSelectedColor);
+            this.panelInspector.Controls.Add(this.lblInspectorInfo);
+            
+            //
+            // lblInspectorInfo
+            //
+            this.lblInspectorInfo.ForeColor = Color.White;
+
+            this.lblInspectorInfo.Font =
+                new Font("Segoe UI", 10);
+
+            this.lblInspectorInfo.Location =
+                new Point(20, 90);
+
+            this.lblInspectorInfo.Size =
+                new Size(200, 100);
+
+            this.lblInspectorInfo.Text =
+                "No color selected";
+
+            //
+            // flowSidebar
+            //
+            this.flowSidebar.Dock = DockStyle.Fill;
+
+            this.flowSidebar.FlowDirection = FlowDirection.TopDown;
+
+            this.flowSidebar.WrapContents = false;
+
+            this.flowSidebar.AutoScroll = true;
+
+            this.flowSidebar.Padding = new Padding(15);
+
+            this.flowSidebar.SetFlowBreak(this.panelCube, true);
+
+            this.flowSidebar.BackColor = Color.FromArgb(28, 28, 28);
+
+
             // 
             // Form1
             // 
@@ -253,25 +312,42 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1184, 661);
-            this.Controls.Add(this.btnOpen3DLab);
-            this.Controls.Add(this.panelCube); // ربط البانل بالـ Controls الخاصة بالنافذة بشكل صحيح
-            this.Controls.Add(this.btn);
-            this.Controls.Add(this.btnQuantize);
-            this.Controls.Add(this.btnGray);
-            this.Controls.Add(this.lblInfo);
-            this.Controls.Add(this.chkBlue);
-            this.Controls.Add(this.chkGreen);
-            this.Controls.Add(this.chkRed);
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.trackBlue);
-            this.Controls.Add(this.trackGreen);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.trackRed);
-            this.Controls.Add(this.btnReset);
-            this.Controls.Add(this.btnsave);
-            this.Controls.Add(this.btnopen);
-            this.Controls.Add(this.pictureBox1);
+            this.flowSidebar.Controls.Add(this.btnOpen3DLab);
+
+            this.flowSidebar.Controls.Add(this.btnopen);
+
+            this.flowSidebar.Controls.Add(this.btnsave);
+
+            this.flowSidebar.Controls.Add(this.btnReset);
+
+            this.flowSidebar.Controls.Add(this.label1);
+            this.flowSidebar.Controls.Add(this.trackRed);
+
+            this.flowSidebar.Controls.Add(this.label2);
+            this.flowSidebar.Controls.Add(this.trackGreen);
+
+            this.flowSidebar.Controls.Add(this.label3);
+            this.flowSidebar.Controls.Add(this.trackBlue);
+
+            this.flowSidebar.Controls.Add(this.chkRed);
+            this.flowSidebar.Controls.Add(this.chkGreen);
+            this.flowSidebar.Controls.Add(this.chkBlue);
+
+            this.flowSidebar.Controls.Add(this.btn);
+            this.flowSidebar.Controls.Add(this.btnGray);
+            this.flowSidebar.Controls.Add(this.btnQuantize);
+
+            this.flowSidebar.Controls.Add(this.lblInfo);
+
+            this.panelSidebar.Controls.Add(this.flowSidebar);
+
+            this.panelMain.Controls.Add(this.pictureBox1);
+
+            this.pictureBox1.Controls.Add(this.panelInspector);
+
+            this.Controls.Add(this.panelMain);
+            this.Controls.Add(this.panelTop);
+            this.Controls.Add(this.panelSidebar);
             this.Name = "Form1";
             this.Text = "pixellab";
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Form1_DragDrop);
@@ -281,7 +357,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.trackGreen)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBlue)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -301,12 +376,24 @@
         private System.Windows.Forms.CheckBox chkGreen;
         private System.Windows.Forms.CheckBox chkBlue;
         private System.Windows.Forms.Label lblInfo;
+        private System.Windows.Forms.Panel panelSelectedColor;
         private System.Windows.Forms.Button btnGray;
         private System.Windows.Forms.Button btnQuantize;
         private System.Windows.Forms.Button btn;
-        
+
         // التصريح عن الكائن في نهاية الكلاس كما تنص معايير البيئة
         private System.Windows.Forms.Panel panelCube;
+
+        private System.Windows.Forms.Panel panelSidebar;
+        private System.Windows.Forms.Panel panelMain;
+        private System.Windows.Forms.Panel panelTop;
+
+        private System.Windows.Forms.FlowLayoutPanel flowSidebar;
+
+        private System.Windows.Forms.Panel panelInspector;
+        private System.Windows.Forms.Label lblInspectorInfo;
+
         private System.Windows.Forms.Button btnOpen3DLab;
+
     }
 }
