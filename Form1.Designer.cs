@@ -63,7 +63,7 @@
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.pictureBox1.TabIndex = 0;
             this.pictureBox1.TabStop = false;
-            this.pictureBox1.Click += new System.EventHandler(this.pictureBox1_Click);
+            // this.pictureBox1.Click += new System.EventHandler(this.pictureBox1_Click);
             this.pictureBox1.MouseClick += new System.Windows.Forms.MouseEventHandler(this.pictureBox1_MouseClick);
             // 
             // btnopen
@@ -282,10 +282,6 @@
                 new Padding(5);
             this.panelColorCard.AutoScroll = true;
 
-                        
-                        //
-            // lblColorTitle
-            //
 
             this.lblColorTitle.Text =
                 "Color Space";
@@ -359,16 +355,11 @@
         private System.Windows.Forms.Button btnGray;
         private System.Windows.Forms.Button btnQuantize;
         private System.Windows.Forms.Button btn;
-
-        // التصريح عن الكائن في نهاية الكلاس كما تنص معايير البيئة
         private System.Windows.Forms.Panel panelCube;
-
         private System.Windows.Forms.Panel panelSidebar;
         private System.Windows.Forms.Panel panelMain;
         private System.Windows.Forms.Panel panelTop;
-
         private System.Windows.Forms.FlowLayoutPanel flowSidebar;
-
         private System.Windows.Forms.Panel panelInspector;
         private System.Windows.Forms.Label lblInspectorInfo;
 
