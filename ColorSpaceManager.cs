@@ -12,7 +12,6 @@ namespace pixellab
     public static class ColorSpaceRegistry
     {
         private static readonly Dictionary<string, List<ColorChannel>> _colorSpaces = new Dictionary<string, List<ColorChannel>>();
-
         static ColorSpaceRegistry()
         {
             Initialize();
@@ -45,17 +44,15 @@ namespace pixellab
             _colorSpaces["LAB"] = new List<ColorChannel>
             {
                 new ColorChannel { Name="L", Min=0, Max=255 },
-                new ColorChannel { Name="A", Min=0, Max=255 }, // تمت إضافة 128
-                new ColorChannel { Name="B", Min=0, Max=255 }
+                new ColorChannel { Name="A", Min=-128, Max=127 }, // تمت إضافة 128
+                new ColorChannel { Name="B", Min=-128, Max=127 }
             };
-
             _colorSpaces["YUV"] = new List<ColorChannel>
             {
                 new ColorChannel { Name="Y", Min=0, Max=255 },
                 new ColorChannel { Name="U", Min=0, Max=255 },
                 new ColorChannel { Name="V", Min=0, Max=255 }
             };
-
             _colorSpaces["YCbCr"] = new List<ColorChannel>
             {
                 new ColorChannel { Name="Y", Min=0, Max=255 },

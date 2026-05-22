@@ -207,8 +207,11 @@ namespace pixellab.Renderers
                         double finalY = (y3D / SpaceScale) + 127.5;
                         double finalV = z3D / SpaceScale;
 
-                        // استدعاء التابع العكسي الأصلي الخاص بكِ مباشرة ومستحيل يغلط!
-                        return YuvConverter.ToRgb(finalY, finalU, finalV);
+                        double clampedY = Math.Max(0, Math.Min(255, finalY));
+                        double clampedU = Math.Max(0, Math.Min(255, finalU));
+                        double clampedV = Math.Max(0, Math.Min(255, finalV));
+
+                        return YuvConverter.ToRgb(clampedY, clampedU, clampedV);
                     }
                 }
             }

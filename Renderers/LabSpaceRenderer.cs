@@ -93,12 +93,12 @@ namespace pixellab.Renderers
 
                     var target = ProjectWithDepth(xPos, yPos, zPos, cx, cy, angleX, angleY, zoom);
 
-                    // 4. رسم المؤشر الذهبي (بشرط أن يكون داخل حدود الرؤية)
-                    using (Brush b = new SolidBrush(selectedColor))
-                        g.FillEllipse(b, target.Point.X - 7, target.Point.Y - 7, 14, 14);
+                    // // 4. رسم المؤشر الذهبي (بشرط أن يكون داخل حدود الرؤية)
+                    // using (Brush b = new SolidBrush(selectedColor))
+                    //     g.FillEllipse(b, target.Point.X - 7, target.Point.Y - 7, 14, 14);
 
-                    using (Pen goldPen = new Pen(Color.Gold, 2f))
-                        g.DrawEllipse(goldPen, target.Point.X - 9, target.Point.Y - 9, 18, 18);
+                    // using (Pen goldPen = new Pen(Color.Gold, 2f))
+                    //     g.DrawEllipse(goldPen, target.Point.X - 9, target.Point.Y - 9, 18, 18);
                 }
             }
 
@@ -172,15 +172,7 @@ namespace pixellab.Renderers
                 return path.IsVisible(p);
             }
         }
-        // دالة مساعدة لحساب أوزان الباري سنتريك
-        private static void CalculateBarycentric(Point p, PointF a, PointF b, PointF c, out double w0, out double w1, out double w2)
-        {
-            double det = (b.Y - c.Y) * (a.X - c.X) + (c.X - b.X) * (a.Y - c.Y);
-            if (Math.Abs(det) < 0.0001) { w0 = 1.0/3.0; w1 = 1.0/3.0; w2 = 1.0/3.0; return; }
-            w0 = ((b.Y - c.Y) * (p.X - c.X) + (c.X - b.X) * (p.Y - c.Y)) / det;
-            w1 = ((c.Y - a.Y) * (p.X - c.X) + (a.X - c.X) * (p.Y - c.Y)) / det;
-            w2 = 1.0 - w0 - w1;
-        }
+      
         // دالة مساعدة لحساب الاستيفاء بدقة
         private static (bool IsInside, double w1, double w2, double w3) GetBarycentricInterpolation(Point p, PointF a, PointF b, PointF c)
         {
@@ -191,37 +183,14 @@ namespace pixellab.Renderers
             return (w1 >= 0 && w2 >= 0 && w3 >= 0, w1, w2, w3);
         }
 
-        private static Color InterpolateColor((bool IsInside, double w1, double w2, double w3) bary, (double L, double a, double b) v1, (double L, double a, double b) v2, (double L, double a, double b) v3)
-        {
-            double L = bary.w1 * v1.L + bary.w2 * v2.L + bary.w3 * v3.L;
-            double a = bary.w1 * v1.a + bary.w2 * v2.a + bary.w3 * v3.a;
-            double b_val = bary.w1 * v1.b + bary.w2 * v2.b + bary.w3 * v3.b;
-            return LabConverter.ToRgb(L, a, b_val);
-        }
-
         private static (double L, double a, double b) GetLabAt(int i, int j)
         {
             double L = i * (100.0 / L_Steps);
-            // المعادلة المورفولوجية الرائعة التي ابتكرتِها للشكل المغزلي المتناسق
             double radius = Math.Sin(i * Math.PI / L_Steps) * 80.0;
             double angle = j * (360.0 / Segments) * Math.PI / 180.0;
             return (L, radius * Math.Cos(angle), radius * Math.Sin(angle));
         }
-
-        private static double CalculateAdvancedBilinearRatio(Point pt, PointF p0, PointF p1, PointF p2, PointF p3, out double v)
-        {
-            double d1 = DistanceToLine(pt, p0, p3); double d2 = DistanceToLine(pt, p1, p2);
-            double u = (d1 + d2 > 0) ? d1 / (d1 + d2) : 0;
-            double d3 = DistanceToLine(pt, p0, p1); double d4 = DistanceToLine(pt, p3, p2);
-            v = (d3 + d4 > 0) ? d3 / (d3 + d4) : 0;
-            return u;
-        }
-
-        private static double DistanceToLine(Point p, PointF l1, PointF l2)
-        {
-            double num = Math.Abs((l2.Y - l1.Y) * p.X - (l2.X - l1.X) * p.Y + l2.X * l1.Y - l2.Y * l1.X);
-            double den = Math.Sqrt(Math.Pow(l2.Y - l1.Y, 2) + Math.Pow(l2.X - l1.X, 2));
-            return den == 0 ? 0 : num / den;
-        }
+       
     }
+    
 }

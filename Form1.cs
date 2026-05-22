@@ -24,6 +24,7 @@ namespace pixellab
         private string currentColorSpace = "RGB";
         private System.Windows.Forms.Timer livePreviewTimer;
         private FormSpaces _spaceForm;
+        private bool isSyncingSystemFrom3D = false;
         public Form1()
         {
             InitializeComponent();
@@ -396,12 +397,24 @@ namespace pixellab
             {
                 if (ctrl is ChannelControl cc && cc.lblName.Text == name)
                 {
-                    cc.track.Value = value; 
-                    cc.lblValue.Text = value.ToString(); // تحديث النص
+                    // 1. تحديد النطاق المسموح به بناءً على الـ TrackBar نفسه
+                    int min = cc.track.Minimum;
+                    int max = cc.track.Maximum;
+
+                    int safeValue = Math.Max(min, Math.Min(max, value));
+
+                    cc.track.Value = safeValue; 
+                    cc.lblValue.Text = safeValue.ToString(); 
                 }
             }
         }
-
+        public void SetSelectedSystemFrom3D(string shortSystemName)
+        {
+            isSyncingSystemFrom3D = true;
+            cmbColorSpaces.SelectedItem = shortSystemName;
+            BuildColorControls(shortSystemName);
+            isSyncingSystemFrom3D = false;
+        }
 
     }
 }
