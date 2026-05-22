@@ -235,6 +235,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using pixellab.Renderers;
+using pixellab.Converters; // هنا السحر كله!
 
 namespace pixellab
 {
@@ -539,9 +540,11 @@ namespace pixellab
             cachedReportText = $"📊 تقرير المزامنة اللحظي (3D Color Sync):\n" +
                                $"━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                                $"RGB   →  (R: {targetColor.R}, G: {targetColor.G}, B: {targetColor.B})\n\n" +
-                               $"HSV   →  (H: {h:0}°, S: {s * 100:0}%, V: {v * 100:0}%)\n\n" +
-                               $"YCbCr →  (Y: {y:0}, Cb: {cb:0}, Cr: {cr:0})\n\n" +
-                               $"Lab   →  (L*: {lab.L:0}, a*: {lab.A:0}, b*: {lab.B:0})";
+                               $"HSV   →  (H: {hsv.Hue:0}°, S: {hsv.Saturation * 100:0}%, V: {hsv.Value * 100:0}%)\n\n" +
+                               $"YCbCr →  (Y: {ycbcr.Y:0}, Cb: {ycbcr.Cb:0}, Cr: {ycbcr.Cr:0})\n\n" +
+                               $"YUV   →  (Y: {yuv.Y * 255:0}, U: {yuv.U:0.00}, V: {yuv.V:0.00})\n\n" + 
+                               $"Lab   →  (L*: {lab.L}, a*: {lab.A}, b*: {lab.B:0})\n\n" + 
+                               $"CMYK  →  (C: {cmyk.C * 100:0}%, M: {cmyk.M * 100:0}%, Y: {cmyk.Y * 100:0}%, K: {cmyk.K * 100:0}%)";
         }
 
         
@@ -561,23 +564,29 @@ namespace pixellab
                 if (selectedSystem == "RGB Cube")
                 {
                     RgbCubeRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor, localSelectedColor);
-                    RenderReportText(g);
                 }
                 else if (selectedSystem == "HSV Cone")
                 {
                     HsvConeRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor, localSelectedColor);
-                    RenderReportText(g);
                 }
                 else if (selectedSystem == "YCbCr Space")
                 {
                     YCbCrSpaceRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor, localSelectedColor);
-                    RenderReportText(g);
+                }
+                else if (selectedSystem == "YUV Space")
+                {
+                    YuvSpaceRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor, localSelectedColor);
                 }
                 else if (selectedSystem == "Lab Space")
                 {
-                    LabSpaceRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor, localSelectedColor);
-                    RenderReportText(g);
+                    LabRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor, localSelectedColor);
                 }
+                else if (selectedSystem == "CMYK Space")
+                {
+                    CmykRenderer.Render(g, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor);
+                }
+
+                RenderReportText(g);
             }
             catch (Exception ex)
             {

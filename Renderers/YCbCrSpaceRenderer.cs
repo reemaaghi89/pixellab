@@ -15,17 +15,22 @@ namespace pixellab.Renderers
             double cosX = Math.Cos(radX), sinX = Math.Sin(radX);
             double cosY = Math.Cos(radY), sinY = Math.Sin(radY);
 
-            // تدوير ثلاثي الأبعاد
+            // التدوير ثلاثي الأبعاد حول المحاور الفراغية
             double rY = y * cosX - z * sinX;
             double rZ = y * sinX + z * cosX;
             double rX = x * cosY + rZ * sinY;
             double depthZ = -x * sinY + rZ * cosY;
 
-            // ضبط التحجيم ليتناسب متوازي المستطيلات مع مساحة الشاشة بشكل ممتاز
+            // إسقاط المنظور على الشاشة مع عامل التكبير
             float screenX = (float)(cx + rX * 2.5 * zoom);
             float screenY = (float)(cy - rY * 2.5 * zoom);
 
             return (new PointF(screenX, screenY), depthZ);
+        }
+
+        private static PointF Project(double x, double y, double z, int cx, int cy, double angleX, double angleY, float zoom)
+        {
+            return ProjectWithDepth(x, y, z, cx, cy, angleX, angleY, zoom).Point;
         }
 
         public static void Render(Graphics g, int width, int height, double angleX, double angleY, float zoom, Color selectedColor)
@@ -35,65 +40,56 @@ namespace pixellab.Renderers
             int cx = width / 2;
             int cy = height / 2;
 
-            // 🌟 توليد رؤوس متوازي المستطيلات الحقيقي عبر تحويل رؤوس مكعب RGB الـ 8 مباشرة
-            // الرؤوس بالترتيب في فضاء RGB [0, 255]
+            // تحديد قيم الـ RGB الأساسية للرؤوس الثمانية للمكعب لتمريرها عبر مصفوفة التحويل
             double[,] rgbVertices = {
-                {0,   0,   0},   // 0: الأسود
-                {255, 0,   0},   // 1: الأحمر
+                {0, 0, 0},       // 0: الأسود
+                {255, 0, 0},     // 1: الأحمر
                 {255, 255, 0},   // 2: الأصفر
-                {0,   255, 0},   // 3: الأخضر
-                {0,   0,   255}, // 4: الأزرق
-                {255, 0,   255}, // 5: الماجنتا
+                {0, 255, 0},     // 3: الأخضر
+                {0, 0, 255},     // 4: الأزرق
+                {255, 0, 255},   // 5: الماجنتا
                 {255, 255, 255}, // 6: الأبيض
-                {0,   255, 255}  // 7: السيان
+                {0, 255, 255}    // 7: السيان
             };
 
+            double[,] vertices = new double[8, 3];
             PointF[] pts = new PointF[8];
             double[] vertexDepths = new double[8];
-            double[,] ycbcrVertices = new double[8, 3];
 
+            // تحويل كل رأس من فضاء RGB إلى YCbCr خطياً وتوسيطه داخل نطاق الرسم [-50, 50]
             for (int i = 0; i < 8; i++)
             {
-                double r = rgbVertices[i, 0];
-                double gVal = rgbVertices[i, 1];
-                double b = rgbVertices[i, 2];
+                var ycbcr = RgbToYCbCr(rgbVertices[i, 0], rgbVertices[i, 1], rgbVertices[i, 2]);
+                
+                // توزيع المحاور: X = Cb (التباين الأزرق)، Y = Y (السطوع العمودي)، Z = Cr (التباين الأحمر)
+                vertices[i, 0] = ((ycbcr.Cb / 255.0) * 100.0) - 50.0;
+                vertices[i, 1] = ((ycbcr.Y / 255.0) * 100.0) - 50.0;
+                vertices[i, 2] = ((ycbcr.Cr / 255.0) * 100.0) - 50.0;
 
-                // التحويل الرياضي الدقيق لـ YCbCr
-                double yVal = 0.299 * r + 0.587 * gVal + 0.114 * b;
-                double cb = 128 - 0.168736 * r - 0.331264 * gVal + 0.5 * b;
-                double cr = 128 + 0.5 * r - 0.418688 * gVal - 0.081312 * b;
-
-                // مطابقة النطاق ليكون متمحوراً حول المركز [-50, 50] للرسم ثلاثي الأبعاد
-                ycbcrVertices[i, 0] = ((cb / 255.0) * 100.0) - 50.0; // محور X
-                ycbcrVertices[i, 1] = ((cr / 255.0) * 100.0) - 50.0; // محور Y
-                ycbcrVertices[i, 2] = ((yVal / 255.0) * 100.0) - 50.0; // محور Z (الارتفاع الشاقولي للإضاءة)
-
-                var projection = ProjectWithDepth(ycbcrVertices[i, 0], ycbcrVertices[i, 1], ycbcrVertices[i, 2], cx, cy, angleX, angleY, zoom);
+                var projection = ProjectWithDepth(vertices[i, 0], vertices[i, 1], vertices[i, 2], cx, cy, angleX, angleY, zoom);
                 pts[i] = projection.Point;
                 vertexDepths[i] = projection.ZDepth;
             }
 
-            // تعريف الأوجه الستة لمتوازي المستطيلات المتكامل (المكعب المائل)
             int[][] faces = {
-                new int[] {0, 1, 2, 3}, // الوجه السفلي المتصل بالأسود
-                new int[] {4, 5, 6, 7}, // الوجه العلوي المتصل بالسيان/الأبيض
-                new int[] {0, 1, 5, 4}, 
-                new int[] {2, 3, 7, 6}, 
-                new int[] {0, 3, 7, 4}, 
-                new int[] {1, 2, 6, 5}  
+                new int[] {0, 1, 2, 3}, // الخلفي
+                new int[] {4, 5, 6, 7}, // الأمامي
+                new int[] {0, 1, 5, 4}, // السفلي
+                new int[] {2, 3, 7, 6}, // العلوي
+                new int[] {0, 3, 7, 4}, // الأيسر
+                new int[] {1, 2, 6, 5}  // الأيمن
             };
 
-            // تدرجات الألوان الحقيقية للرؤوس مطابقة تماماً للمرجع الأكاديمي المائل
             Color[][] faceGradientColors = {
-                new Color[] { Color.Black, Color.Red, Color.Yellow, Color.Green },
-                new Color[] { Color.Blue, Color.Magenta, Color.White, Color.Cyan },
-                new Color[] { Color.Black, Color.Red, Color.Magenta, Color.Blue },
-                new Color[] { Color.Yellow, Color.Green, Color.Cyan, Color.White },
-                new Color[] { Color.Black, Color.Green, Color.Cyan, Color.Blue },
-                new Color[] { Color.Red, Color.Yellow, Color.White, Color.Magenta }
+                new Color[] { Color.Black, Color.Red, Color.Yellow, Color.Green },     
+                new Color[] { Color.Blue, Color.Magenta, Color.White, Color.Cyan },    
+                new Color[] { Color.Black, Color.Red, Color.Magenta, Color.Blue },     
+                new Color[] { Color.Yellow, Color.Green, Color.Cyan, Color.White },    
+                new Color[] { Color.Black, Color.Green, Color.Cyan, Color.Blue },     
+                new Color[] { Color.Red, Color.Yellow, Color.White, Color.Magenta }    
             };
 
-            // ترتيب الأوجه حسب العمق (Painter's Algorithm)
+            // ترتيب الأوجه حسب العمق (Painter's Algorithm) لمنع التداخل غير المتناسق للمجسم المائل
             List<int> faceIndices = new List<int> { 0, 1, 2, 3, 4, 5 };
             faceIndices.Sort((a, b) => {
                 double depthA = (vertexDepths[faces[a][0]] + vertexDepths[faces[a][1]] + vertexDepths[faces[a][2]] + vertexDepths[faces[a][3]]) / 4.0;
@@ -101,7 +97,6 @@ namespace pixellab.Renderers
                 return depthA.CompareTo(depthB);
             });
 
-            // رسم الأوجه الستة المتوازية والممتلئة بالتدرج اللوني الصحيح
             foreach (int i in faceIndices)
             {
                 PointF[] facePoints = { pts[faces[i][0]], pts[faces[i][1]], pts[faces[i][2]], pts[faces[i][3]] };
@@ -121,27 +116,145 @@ namespace pixellab.Renderers
                     }
                 }
 
-                // رسم الخطوط الهيكلية البيضاء الناعمة لتوضيح توازي المستطيلات المائل
-                using (Pen p = new Pen(Color.FromArgb(60, Color.White), 1f))
+                using (Pen p = new Pen(Color.FromArgb(50, Color.White), 1f))
                 {
                     g.DrawPolygon(p, facePoints);
                 }
             }
 
-            // 🌟 2. حساب وتحديث موقع المؤشر الذهبي المتزامن في الفضاء المائل
-            double selY = 0.299 * selectedColor.R + 0.587 * selectedColor.G + 0.114 * selectedColor.B;
-            double selCb = 128 - 0.168736 * selectedColor.R - 0.331264 * selectedColor.G + 0.5 * selectedColor.B;
-            double selCr = 128 + 0.5 * selectedColor.R - 0.418688 * selectedColor.G - 0.081312 * selectedColor.B;
+            // تحديد وحساب إحداثيات كرة المؤشر اللحظية للون المختار حالياً
+            var selYCbCr = RgbToYCbCr(selectedColor.R, selectedColor.G, selectedColor.B);
+            double pX = ((selYCbCr.Cb / 255.0) * 100.0) - 50.0;
+            double pY = ((selYCbCr.Y / 255.0) * 100.0) - 50.0;
+            double pZ = ((selYCbCr.Cr / 255.0) * 100.0) - 50.0;
 
-            double pX = ((selCb / 255.0) * 100.0) - 50.0;
-            double pY = ((selCr / 255.0) * 100.0) - 50.0;
-            double pZ = ((selY / 255.0) * 100.0) - 50.0;
+            PointF targetPt = Project(pX, pY, pZ, cx, cy, angleX, angleY, zoom);
 
-            var targetProj = ProjectWithDepth(pX, pY, pZ, cx, cy, angleX, angleY, zoom);
-            PointF targetPt = targetProj.Point;
-
-            using (Brush bBrush = new SolidBrush(selectedColor)) g.FillEllipse(bBrush, targetPt.X - 7, targetPt.Y - 7, 14, 14);
+            using (Brush b = new SolidBrush(selectedColor)) g.FillEllipse(b, targetPt.X - 7, targetPt.Y - 7, 14, 14);
             using (Pen goldPen = new Pen(Color.Gold, 2f)) g.DrawEllipse(goldPen, targetPt.X - 9, targetPt.Y - 9, 18, 18);
+        }
+
+        // دالة التقاط اللون المتقدمة للمجسم المائل والمشوه
+        public static Color GetColorAtPointDirect(Point mousePt, int width, int height, double angleX, double angleY, float zoom)
+        {
+            int cx = width / 2;
+            int cy = height / 2;
+
+            double[,] rgbVertices = {
+                {0, 0, 0}, {255, 0, 0}, {255, 255, 0}, {0, 255, 0},
+                {0, 0, 255}, {255, 0, 255}, {255, 255, 255}, {0, 255, 255}
+            };
+
+            double[,] vertices = new double[8, 3];
+            PointF[] pts = new PointF[8];
+            double[] vertexDepths = new double[8];
+
+            for (int i = 0; i < 8; i++)
+            {
+                var ycbcr = RgbToYCbCr(rgbVertices[i, 0], rgbVertices[i, 1], rgbVertices[i, 2]);
+                vertices[i, 0] = ((ycbcr.Cb / 255.0) * 100.0) - 50.0;
+                vertices[i, 1] = ((ycbcr.Y / 255.0) * 100.0) - 50.0;
+                vertices[i, 2] = ((ycbcr.Cr / 255.0) * 100.0) - 50.0;
+
+                var projection = ProjectWithDepth(vertices[i, 0], vertices[i, 1], vertices[i, 2], cx, cy, angleX, angleY, zoom);
+                pts[i] = projection.Point;
+                vertexDepths[i] = projection.ZDepth;
+            }
+
+            int[][] faces = {
+                new int[] {0, 1, 2, 3}, new int[] {4, 5, 6, 7}, new int[] {0, 1, 5, 4},
+                new int[] {2, 3, 7, 6}, new int[] {0, 3, 7, 4}, new int[] {1, 2, 6, 5}
+            };
+
+            List<int> faceIndices = new List<int> { 0, 1, 2, 3, 4, 5 };
+            faceIndices.Sort((a, b) => {
+                double depthA = (vertexDepths[faces[a][0]] + vertexDepths[faces[a][1]] + vertexDepths[faces[a][2]] + vertexDepths[faces[a][3]]) / 4.0;
+                double depthB = (vertexDepths[faces[b][0]] + vertexDepths[faces[b][1]] + vertexDepths[faces[b][2]] + vertexDepths[faces[b][3]]) / 4.0;
+                return depthA.CompareTo(depthB);
+            });
+
+            // فحص الأوجه المائلة تصاعدياً من الأقرب إلى عين الكاميرا
+            for (int j = faceIndices.Count - 1; j >= 0; j--)
+            {
+                int i = faceIndices[j];
+                PointF p0 = pts[faces[i][0]], p1 = pts[faces[i][1]], p2 = pts[faces[i][2]], p3 = pts[faces[i][3]];
+
+                using (GraphicsPath path = new GraphicsPath())
+                {
+                    path.AddPolygon(new PointF[] { p0, p1, p2, p3 });
+
+                    if (path.IsVisible(mousePt))
+                    {
+                        double u = CalculateAdvancedBilinearRatio(mousePt, p0, p1, p2, p3, out double v);
+                        u = Math.Max(0.0, Math.Min(1.0, u));
+                        v = Math.Max(0.0, Math.Min(1.0, v));
+
+                        double[,] faceVerts3D = {
+                            { vertices[faces[i][0], 0], vertices[faces[i][0], 1], vertices[faces[i][0], 2] },
+                            { vertices[faces[i][1], 0], vertices[faces[i][1], 1], vertices[faces[i][1], 2] },
+                            { vertices[faces[i][2], 0], vertices[faces[i][2], 1], vertices[faces[i][2], 2] },
+                            { vertices[faces[i][3], 0], vertices[faces[i][3], 1], vertices[faces[i][3], 2] }
+                        };
+
+                        // استيفاء حركي للإحداثيات ثلاثية الأبعاد المشوهة داخل فضاء الرسم
+                        double x3D = (1 - u) * ((1 - v) * faceVerts3D[0, 0] + v * faceVerts3D[3, 0]) + u * ((1 - v) * faceVerts3D[1, 0] + v * faceVerts3D[2, 0]);
+                        double y3D = (1 - u) * ((1 - v) * faceVerts3D[0, 1] + v * faceVerts3D[3, 1]) + u * ((1 - v) * faceVerts3D[1, 1] + v * faceVerts3D[2, 1]);
+                        double z3D = (1 - u) * ((1 - v) * faceVerts3D[0, 2] + v * faceVerts3D[3, 2]) + u * ((1 - v) * faceVerts3D[1, 2] + v * faceVerts3D[2, 2]);
+
+                        // إعادة الإحداثيات إلى قيم نظام YCbCr الأصلي [0, 255]
+                        double cb = ((x3D + 50.0) / 100.0) * 255.0;
+                        double y    = ((y3D + 50.0) / 100.0) * 255.0;
+                        double cr = ((z3D + 50.0) / 100.0) * 255.0;
+
+                        // استدعاء التحويل العكسي للمصفوفة للحصول على اللون الحقيقي المشتق وإرساله للواجهة
+                        return YCbCrToRgb(y, cb, cr);
+                    }
+                }
+            }
+            return Color.Transparent;
+        }
+
+        private static double CalculateAdvancedBilinearRatio(Point pt, PointF p0, PointF p1, PointF p2, PointF p3, out double v)
+        {
+            double d1 = DistanceToLine(pt, p0, p3);
+            double d2 = DistanceToLine(pt, p1, p2);
+            double u = (d1 + d2 > 0) ? d1 / (d1 + d2) : 0;
+
+            double d3 = DistanceToLine(pt, p0, p1);
+            double d4 = DistanceToLine(pt, p3, p2);
+            v = (d3 + d4 > 0) ? d3 / (d3 + d4) : 0;
+
+            return u;
+        }
+
+        private static double DistanceToLine(Point p, PointF l1, PointF l2)
+        {
+            double num = Math.Abs((l2.Y - l1.Y) * p.X - (l2.X - l1.X) * p.Y + l2.X * l1.Y - l2.Y * l1.X);
+            double den = Math.Sqrt(Math.Pow(l2.Y - l1.Y, 2) + Math.Pow(l2.X - l1.X, 2));
+            return den == 0 ? 0 : num / den;
+        }
+
+        // التابع المساعد للتحويل الخطي الأكاديمي القياسي (ITU-R BT.601)
+        private static (double Y, double Cb, double Cr) RgbToYCbCr(double r, double g, double b)
+        {
+            double y = 0.299 * r + 0.587 * g + 0.114 * b;
+            double cb = 128.0 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+            double cr = 128.0 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+            return (y, cb, cr);
+        }
+
+        // التابع المساعد العكسي لإعادة قيم التباين إلى فضاء العرض اللوني RGB المباشر
+        private static Color YCbCrToRgb(double y, double cb, double cr)
+        {
+            double r = y + 1.402 * (cr - 128.0);
+            double g = y - 0.344136 * (cb - 128.0) - 0.714136 * (cr - 128.0);
+            double b = y + 1.772 * (cb - 128.0);
+
+            return Color.FromArgb(
+                Math.Max(0, Math.Min(255, (int)Math.Round(r))),
+                Math.Max(0, Math.Min(255, (int)Math.Round(g))),
+                Math.Max(0, Math.Min(255, (int)Math.Round(b)))
+            );
         }
     }
 }
