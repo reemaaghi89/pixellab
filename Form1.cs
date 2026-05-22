@@ -17,14 +17,15 @@ namespace pixellab
         private Bitmap originalImage;
         private Bitmap currentImage;
 
-        // private double angleX = 35.0; 
-        // private double angleY = 45.0; 
-        // private Point lastMousePos;  
         private Color selectedPixelColor = Color.FromArgb(255, 255, 255); 
         private string currentColorSpace = "RGB";
         private System.Windows.Forms.Timer livePreviewTimer;
         private FormSpaces _spaceForm;
         private bool isSyncingSystemFrom3D = false;
+        private bool isGrayscaleActive = false;
+        private bool isBlackAndWhiteActive = false;
+        private bool isQuantizeActive = false;
+
         public Form1()
         {
             InitializeComponent();
@@ -35,7 +36,7 @@ namespace pixellab
 
             new DraggablePanelHandler(panelInspector);
             new DraggablePanelHandler(lblInspectorInfo);
-            
+
             typeof(Panel).InvokeMember("DoubleBuffered",
                 System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
                 null, panelCube, new object[] { true });
@@ -157,7 +158,7 @@ namespace pixellab
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 LoadImage(ofd.FileName);
-                panelCube.Invalidate(); // إعادة رسم المكعب للتحديث
+                panelCube.Invalidate(); 
             }
         }
 
@@ -168,11 +169,16 @@ namespace pixellab
 
             currentImage = new Bitmap(originalImage);
             pictureBox1.Image = currentImage;
-
             selectedPixelColor = Color.FromArgb(255, 255, 255);
             panelCube.Invalidate();
+            isGrayscaleActive = false;
+            isBlackAndWhiteActive = false;
+            isQuantizeActive = false;
+            btn.BackColor = Color.FromArgb(45, 45, 48); 
+            btnGray.BackColor = Color.FromArgb(45, 45, 48); 
+            btnQuantize.BackColor = Color.FromArgb(45, 45, 48); 
+            // =========================================================================
         }
-
         private void btnsave_Click(object sender, EventArgs e)
         {
             if (!HasImage()) return;
@@ -209,8 +215,8 @@ namespace pixellab
                 panelCube.Invalidate();
 
                 panelSelectedColor.BackColor = pixelColor;
-
                 lblInspectorInfo.Text = infoReport;
+                UpdateSlidersFromColor(pixelColor);
             }
         }
 
@@ -225,48 +231,87 @@ namespace pixellab
         private void btnQuantizeColors_Click(object sender, EventArgs e)
         {
             if (!HasImage()) return;
-            Bitmap quantizedResult = ImageProcessor.QuantizeImageColors((Bitmap)currentImage, levels: 4);
-            currentImage = quantizedResult;
-            pictureBox1.Image = currentImage;
+            Button btn = (Button)sender;
+            if (!isQuantizeActive)
+            {
+                Bitmap quantizedResult = ImageProcessor.QuantizeImageColors((Bitmap)currentImage, levels: 4);
+                currentImage = quantizedResult;
+                pictureBox1.Image = currentImage;
+                isQuantizeActive = true;
+                btn.BackColor = Color.FromArgb(0, 122, 204);
+            }
+            else
+            {
+                btnReset_Click(null, null);
+                isQuantizeActive = false;
+                btn.BackColor = Color.FromArgb(45, 45, 48);
+            }
         }
-
         private void btnConvertGrayscale_Click(object sender, EventArgs e)
         {
             if (!HasImage()) return;
-            currentImage = ImageProcessor.ConvertToGrayscale((Bitmap)currentImage);
-            pictureBox1.Image = currentImage;
-        }
+            Button btn = (Button)sender;
 
+            if (!isGrayscaleActive)
+            {
+                currentImage = ImageProcessor.ConvertToGrayscale((Bitmap)currentImage);
+                pictureBox1.Image = currentImage;
+                isGrayscaleActive = true;
+                btn.BackColor = Color.FromArgb(0, 122, 204); 
+            }
+            else
+            {
+                btnReset_Click(null, null); 
+                isGrayscaleActive = false;
+                btn.BackColor = Color.FromArgb(45, 45, 48);
+            }
+        }
         private void btnConvertBlackAndWhite_Click(object sender, EventArgs e)
         {
             if (!HasImage()) return;
-            currentImage = ImageProcessor.ConvertToBlackAndWhite((Bitmap)currentImage);
-            pictureBox1.Image = currentImage;
+            Button btn = (Button)sender;
+            if (!isBlackAndWhiteActive)
+            {
+                currentImage = ImageProcessor.ConvertToBlackAndWhite((Bitmap)currentImage);
+                pictureBox1.Image = currentImage;
+                isBlackAndWhiteActive = true;
+                btn.BackColor = Color.FromArgb(0, 122, 204);
+            }
+            else
+            {
+                btnReset_Click(null, null);
+                isBlackAndWhiteActive = false;
+                btn.BackColor = Color.FromArgb(45, 45, 48);
+            }
         }
 
-
-        private void cmbColorSpaces_SelectedIndexChanged(object sender,EventArgs e)
+        private void cmbColorSpaces_SelectedIndexChanged(object sender, EventArgs e)
         {
             string selected =cmbColorSpaces.SelectedItem.ToString();
             BuildColorControls(selected);
         }
-        private void BuildColorControls(string systemName)
-        {
-            currentColorSpace = systemName;
-            ColorAdjustmentInterface.InitializeSliders(flowColorControls, systemName, ChannelTrackChanged);
-        }
 
+        private void LivePreviewTimer_Tick(object sender, EventArgs e)
+        {
+            livePreviewTimer.Stop();
+
+            ImageEffectApplier.Apply(currentColorSpace, originalImage, flowColorControls, pictureBox1);
+        }
         private void InitializeLivePreview()
         {
             livePreviewTimer =new System.Windows.Forms.Timer();
             livePreviewTimer.Interval = 120;
             livePreviewTimer.Tick +=LivePreviewTimer_Tick;
         }
-        private void LivePreviewTimer_Tick(object sender, EventArgs e)
+        
+
+        private void BuildColorControls(string systemName)
         {
-            livePreviewTimer.Stop();
-            ImageEffectApplier.Apply(currentColorSpace, originalImage, flowColorControls, pictureBox1);
+            currentColorSpace = systemName;
+            ColorAdjustmentInterface.InitializeSliders(flowColorControls, systemName, ChannelTrackChanged);
         }
+
+        
         private bool isUpdatingFrom3D = false;
         private void ChannelTrackChanged(object sender,EventArgs e)
         {
@@ -414,6 +459,56 @@ namespace pixellab
             cmbColorSpaces.SelectedItem = shortSystemName;
             BuildColorControls(shortSystemName);
             isSyncingSystemFrom3D = false;
+        }
+        //=============================================================
+        private void UpdateSlidersFromColor(Color color)
+        {
+            if (flowColorControls.Controls.Count == 0) return;
+            livePreviewTimer.Stop();
+            switch (currentColorSpace)
+            {
+                case "RGB":
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Red", color.R);
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Green", color.G);
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Blue", color.B);
+                    break;
+
+                case "HSV":
+                    var hsv = pixellab.Converters.HsvConverter.FromRgb(color); // استدعاء المحول المكتوب مسبقاً
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Hue", (int)Math.Round(hsv.Hue));
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Saturation", (int)Math.Round(hsv.Saturation * 100));
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Value", (int)Math.Round(hsv.Value * 100));
+                    break;
+
+                case "CMYK":
+                    var cmyk = pixellab.Converters.CmykConverter.FromRgb(color);
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Cyan", (int)Math.Round(cmyk.C * 100));
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Magenta", (int)Math.Round(cmyk.M * 100));
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Yellow", (int)Math.Round(cmyk.Y * 100));
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Black", (int)Math.Round(cmyk.K * 100));
+                    break;
+
+                case "LAB":
+                    var lab = pixellab.Converters.LabConverter.FromRgb(color);
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "L", (int)Math.Round(lab.L));
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "A", (int)Math.Round(lab.A));
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "B", (int)Math.Round(lab.B));
+                    break;
+
+                case "YUV":
+                    var yuv = pixellab.Converters.YuvConverter.FromRgb(color);
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Y", (int)Math.Round(yuv.Y));
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "U", (int)Math.Round(yuv.U));
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "V", (int)Math.Round(yuv.V));
+                    break;
+
+                case "YCbCr":
+                    var ycbcr = pixellab.Converters.YcbcrConverter.FromRgb(color);
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Y", (int)Math.Round(ycbcr.Y));
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Cb", (int)Math.Round(ycbcr.Cb));
+                    ColorAdjustmentInterface.SetSliderValue(flowColorControls, "Cr", (int)Math.Round(ycbcr.Cr));
+                    break;
+            }
         }
 
     }

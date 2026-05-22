@@ -50,6 +50,8 @@ namespace pixellab
             this.Controls.Add(track);
             this.Controls.Add(chkEnable);
         }
+        public void UpdateValueLabel()
+        {   lblValue.Text = track.Value.ToString();   }
     }
    public static class ColorAdjustmentInterface
     {
@@ -77,5 +79,23 @@ namespace pixellab
             }
             return 0;
         }
+// دالة لتحديث قيمة سلايدر معين باسمه وتحديث الليبل التابع له
+public static void SetSliderValue(FlowLayoutPanel panel, string sliderName, int value)
+{
+    foreach (Control control in panel.Controls)
+    {
+        if (control is ChannelControl slider && slider.lblName.Text == sliderName)
+        {
+            // التأكد من أن القيمة تقع ضمن الحدود المسموحة للسلايدر
+            if (value >= slider.track.Minimum && value <= slider.track.Maximum)
+            {
+                slider.track.Value = value;
+                slider.UpdateValueLabel(); // تحديث النص الرقمي بجانب السلايدر
+            }
+            break;
+        }
+    }
+}
+
     }
 }
