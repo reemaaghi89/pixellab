@@ -32,15 +32,6 @@
             this.btnopen = new System.Windows.Forms.Button();
             this.btnsave = new System.Windows.Forms.Button();
             this.btnReset = new System.Windows.Forms.Button();
-            this.trackRed = new System.Windows.Forms.TrackBar();
-            this.label1 = new System.Windows.Forms.Label();
-            this.trackGreen = new System.Windows.Forms.TrackBar();
-            this.trackBlue = new System.Windows.Forms.TrackBar();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.chkRed = new System.Windows.Forms.CheckBox();
-            this.chkGreen = new System.Windows.Forms.CheckBox();
-            this.chkBlue = new System.Windows.Forms.CheckBox();
             this.lblInfo = new System.Windows.Forms.Label();
             this.panelSelectedColor = new System.Windows.Forms.Panel();
             this.btnGray = new System.Windows.Forms.Button();
@@ -51,6 +42,10 @@
             this.panelMain = new System.Windows.Forms.Panel();
             this.panelTop = new System.Windows.Forms.Panel();
             this.flowSidebar = new System.Windows.Forms.FlowLayoutPanel();
+            this.cmbColorSpaces = new System.Windows.Forms.ComboBox();
+            this.flowColorControls = new System.Windows.Forms.FlowLayoutPanel();
+            this.panelColorCard =  new System.Windows.Forms.Panel();
+            this.lblColorTitle =  new System.Windows.Forms.Label();
             this.panelInspector = new System.Windows.Forms.Panel();
             this.panelSelectedColor = new System.Windows.Forms.Panel();
             this.lblInspectorInfo = new System.Windows.Forms.Label();
@@ -59,9 +54,6 @@
             this.panelCube = new System.Windows.Forms.Panel();
 
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.trackRed)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.trackGreen)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.trackBlue)).BeginInit();
             // 
             // pictureBox1
             // 
@@ -98,86 +90,6 @@
             this.btnReset.Text = "Reset";
             this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
             // 
-            // trackRed
-            // 
-            this.trackRed.Width = 200;
-            this.trackRed.Maximum = 255;
-            this.trackRed.Minimum = -255;
-            this.trackRed.Name = "trackRed";
-            this.trackRed.Size = new System.Drawing.Size(200, 45);
-            this.trackRed.TabIndex = 4;
-            this.trackRed.Scroll += new System.EventHandler(this.trackRed_Scroll);
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(69, 13);
-            this.label1.TabIndex = 5;
-            this.label1.Text = "Red Channel";
-            // 
-            // trackGreen
-            // 
-            this.trackGreen.Width = 200;
-            this.trackGreen.Maximum = 255;
-            this.trackGreen.Minimum = -255;
-            this.trackGreen.Name = "trackGreen";
-            this.trackGreen.Size = new System.Drawing.Size(200, 45);
-            this.trackGreen.TabIndex = 6;
-            this.trackGreen.Scroll += new System.EventHandler(this.trackGreen_Scroll);
-            // 
-            // trackBlue
-            // 
-            this.trackBlue.Width = 200;
-            this.trackBlue.Maximum = 255;
-            this.trackBlue.Minimum = -255;
-            this.trackBlue.Name = "trackBlue";
-            this.trackBlue.Size = new System.Drawing.Size(200, 45);
-            this.trackBlue.TabIndex = 7;
-            this.trackBlue.Scroll += new System.EventHandler(this.trackBlue_Scroll);
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(78, 13);
-            this.label2.TabIndex = 8;
-            this.label2.Text = "Green Channel";
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(70, 13);
-            this.label3.TabIndex = 9;
-            this.label3.Text = "Blue Channel";
-            // 
-            // chkRed
-            // 
-            this.chkRed.AutoSize = true;
-            this.chkRed.Name = "chkRed";
-            this.chkRed.Size = new System.Drawing.Size(84, 17);
-            this.chkRed.TabIndex = 10;
-            this.chkRed.Text = "Disable Red";
-            this.chkRed.CheckedChanged += new System.EventHandler(this.chkRed_CheckedChanged);
-            // 
-            // chkGreen
-            // 
-            this.chkGreen.AutoSize = true;
-            this.chkGreen.Name = "chkGreen";
-            this.chkGreen.Size = new System.Drawing.Size(93, 17);
-            this.chkGreen.TabIndex = 11;
-            this.chkGreen.Text = "Disable Green";
-            this.chkGreen.CheckedChanged += new System.EventHandler(this.chkGreen_CheckedChanged);
-            // 
-            // chkBlue
-            // 
-            this.chkBlue.AutoSize = true;
-            this.chkBlue.Name = "chkBlue";
-            this.chkBlue.Size = new System.Drawing.Size(85, 17);
-            this.chkBlue.TabIndex = 12;
-            this.chkBlue.Text = "Disable Blue";
-            this.chkBlue.CheckedChanged += new System.EventHandler(this.chkBlue_CheckedChanged);
             // 
             // lblInfo
             // 
@@ -189,7 +101,7 @@
             //
             // panelSelectedColor
             //
-            this.panelSelectedColor.Size = new System.Drawing.Size(200, 50);
+            this.panelSelectedColor.Size = new System.Drawing.Size(220, 40);
 
             this.panelSelectedColor.BackColor = Color.Black;
 
@@ -259,13 +171,13 @@
             //
             // panelInspector
             //
-            this.panelInspector.BackColor = Color.FromArgb(35, 70, 35);
+            this.panelInspector.BackColor =  Color.FromArgb(28, 28, 28);
 
-            this.panelInspector.Size = new Size(280, 500);
+            this.panelInspector.Size = new Size(220, 450);
 
             this.panelInspector.Location = new Point(20, 20);
-            this.panelInspector.BorderStyle = BorderStyle.FixedSingle;
-            this.panelInspector.Padding = new Padding(10);
+            this.panelInspector.BorderStyle =   BorderStyle.None;
+            this.panelInspector.Padding =new Padding(15);
             this.panelInspector.Controls.Add(this.panelSelectedColor);
             this.panelInspector.Controls.Add(this.lblInspectorInfo);
 
@@ -308,6 +220,83 @@
 
             this.flowSidebar.BackColor = Color.FromArgb(28, 28, 28);
 
+                        //
+            // cmbColorSpaces
+            //
+            this.cmbColorSpaces.Width = 200;
+
+            this.cmbColorSpaces.DropDownStyle =
+                ComboBoxStyle.DropDownList;
+
+            this.cmbColorSpaces.BackColor =
+                Color.FromArgb(45,45,48);
+
+            this.cmbColorSpaces.ForeColor = Color.White;
+
+            this.cmbColorSpaces.FlatStyle = FlatStyle.Flat;
+
+            this.cmbColorSpaces.Items.AddRange(new object[]
+            {
+                "RGB",
+                "HSV",
+                "CMYK",
+                "LAB",
+                "YUV",
+                "YCbCr"
+            });
+
+            this.cmbColorSpaces.SelectedIndex = 0;
+
+            this.cmbColorSpaces.SelectedIndexChanged +=new EventHandler(this.cmbColorSpaces_SelectedIndexChanged);
+
+                        //
+            // flowColorControls
+            //
+            this.flowColorControls.FlowDirection =FlowDirection.TopDown;
+
+            this.flowColorControls.WrapContents = false;
+
+            this.flowColorControls.AutoSize = false;
+
+            this.flowColorControls.Width = 220;
+
+            this.flowColorControls.Height = 300;
+
+            this.flowColorControls.BackColor =Color.FromArgb(28,28,28);
+
+                        //
+            // panelColorCard
+            //
+
+            this.panelColorCard.Width = 220;
+
+            this.panelColorCard.Height = 420;
+
+            this.panelColorCard.BackColor =
+                Color.FromArgb(35,35,35);
+
+            this.panelColorCard.Padding =
+                new Padding(10);
+
+            this.panelColorCard.Margin =
+                new Padding(5);
+            this.panelColorCard.AutoScroll = true;
+
+                        
+                        //
+            // lblColorTitle
+            //
+
+            this.lblColorTitle.Text =
+                "Color Space";
+
+            this.lblColorTitle.ForeColor =
+                Color.White;
+
+            this.lblColorTitle.Font =
+                new Font("Segoe UI", 11, FontStyle.Bold);
+
+            this.lblColorTitle.AutoSize = true;
 
             // 
             // Form1
@@ -324,18 +313,6 @@
 
             this.flowSidebar.Controls.Add(this.btnReset);
 
-            this.flowSidebar.Controls.Add(this.label1);
-            this.flowSidebar.Controls.Add(this.trackRed);
-
-            this.flowSidebar.Controls.Add(this.label2);
-            this.flowSidebar.Controls.Add(this.trackGreen);
-
-            this.flowSidebar.Controls.Add(this.label3);
-            this.flowSidebar.Controls.Add(this.trackBlue);
-
-            this.flowSidebar.Controls.Add(this.chkRed);
-            this.flowSidebar.Controls.Add(this.chkGreen);
-            this.flowSidebar.Controls.Add(this.chkBlue);
 
             this.flowSidebar.Controls.Add(this.btn);
             this.flowSidebar.Controls.Add(this.btnGray);
@@ -344,6 +321,16 @@
             this.flowSidebar.Controls.Add(this.lblInfo);
 
             this.panelSidebar.Controls.Add(this.flowSidebar);
+
+            this.panelColorCard.Controls.Add( this.lblColorTitle);
+
+            this.panelColorCard.Controls.Add( this.cmbColorSpaces);
+            this.cmbColorSpaces.Location = new Point(10, 45);
+
+            this.panelColorCard.Controls.Add( this.flowColorControls);
+            this.flowColorControls.Location =new Point(10, 90);
+
+            this.flowSidebar.Controls.Add(this.panelColorCard);
 
             this.panelMain.Controls.Add(this.pictureBox1);
 
@@ -357,9 +344,6 @@
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Form1_DragDrop);
             this.DragEnter += new System.Windows.Forms.DragEventHandler(this.Form1_DragEnter);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.trackRed)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.trackGreen)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.trackBlue)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -370,15 +354,6 @@
         private System.Windows.Forms.Button btnopen;
         private System.Windows.Forms.Button btnsave;
         private System.Windows.Forms.Button btnReset;
-        private System.Windows.Forms.TrackBar trackRed;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TrackBar trackGreen;
-        private System.Windows.Forms.TrackBar trackBlue;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.CheckBox chkRed;
-        private System.Windows.Forms.CheckBox chkGreen;
-        private System.Windows.Forms.CheckBox chkBlue;
         private System.Windows.Forms.Label lblInfo;
         private System.Windows.Forms.Panel panelSelectedColor;
         private System.Windows.Forms.Button btnGray;
@@ -398,6 +373,14 @@
         private System.Windows.Forms.Label lblInspectorInfo;
 
         private System.Windows.Forms.Button btnOpen3DLab;
+
+        private System.Windows.Forms.ComboBox cmbColorSpaces;
+
+        private System.Windows.Forms.FlowLayoutPanel flowColorControls;
+
+        private System.Windows.Forms.Panel panelColorCard;
+
+        private System.Windows.Forms.Label lblColorTitle;
 
     }
 }

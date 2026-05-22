@@ -21,10 +21,26 @@ namespace pixellab
         private double angleY = 45.0; // زاوية الدوران العمودي البدئية
         private Point lastMousePos;  // تتبع موقع الماوس الأخير للسحب
         private Color selectedPixelColor = Color.FromArgb(255, 255, 255); // لتحديد موضع النقطة داخل المكعب
+        private string currentColorSpace = "RGB";
+        private System.Windows.Forms.Timer livePreviewTimer;
+
+        private Dictionary<string, List<ColorChannel>>
+        colorSpaces;
+        public class ColorChannel
+        {
+            public string Name { get; set; }
+
+            public int Min { get; set; }
+
+            public int Max { get; set; }
+        }
 
         public Form1()
         {
             InitializeComponent();
+            InitializeColorSpaces();
+            BuildColorControls("RGB");
+            InitializeLivePreview();
             ApplyDarkTheme();
             panelInspector.MouseDown += PanelInspector_MouseDown;
             panelInspector.MouseMove += PanelInspector_MouseMove;
@@ -37,7 +53,7 @@ namespace pixellab
             panelSelectedColor.MouseDown += PanelInspector_MouseDown;
             panelSelectedColor.MouseMove += PanelInspector_MouseMove;
             panelSelectedColor.MouseUp += PanelInspector_MouseUp;
-                        // تفعيل ميزة التخزين المؤقت المزدوج لمنع الوميض المزعج أثناء تدوير المكعب
+            // تفعيل ميزة التخزين المؤقت المزدوج لمنع الوميض المزعج أثناء تدوير المكعب
             typeof(Panel).InvokeMember("DoubleBuffered",
                 System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
                 null, panelCube, new object[] { true });
@@ -72,19 +88,12 @@ namespace pixellab
             panelSelectedColor.BorderStyle = BorderStyle.None;
 
             // الـ TrackBars
-            trackRed.BackColor = this.BackColor;
-            trackGreen.BackColor = this.BackColor;
-            trackBlue.BackColor = this.BackColor;
+
 
             // الـ Checkboxes
-            chkRed.ForeColor = Color.White;
-            chkGreen.ForeColor = Color.White;
-            chkBlue.ForeColor = Color.White;
 
             // Labels
-            label1.ForeColor = Color.White;
-            label2.ForeColor = Color.White;
-            label3.ForeColor = Color.White;
+
         }
 
         private void StyleButton(Button button)
@@ -188,13 +197,6 @@ namespace pixellab
             currentImage = new Bitmap(originalImage);
             pictureBox1.Image = currentImage;
 
-            trackRed.Value = 0;
-            trackGreen.Value = 0;
-            trackBlue.Value = 0;
-
-            chkRed.Checked = false;
-            chkGreen.Checked = false;
-            chkBlue.Checked = false;
             selectedPixelColor = Color.FromArgb(255, 255, 255);
             panelCube.Invalidate();
         }
@@ -233,9 +235,7 @@ namespace pixellab
                 selectedPixelColor = pixelColor; // تحديث اللون العام للمكعب
 
                 // مزامنة الـ Trackbars على اليمين تلقائياً
-                if (trackRed != null) trackRed.Value = pixelColor.R;
-                if (trackGreen != null) trackGreen.Value = pixelColor.G;
-                if (trackBlue != null) trackBlue.Value = pixelColor.B;
+
 
                 // تحديث لوحة رسم مكعب الألوان فوراً ليتحرك المؤشر المشع
                 panelCube.Invalidate();
@@ -288,29 +288,52 @@ namespace pixellab
             pictureBox1.Image = currentImage;
         }
 
-        private void ApplyRGB()
+        private void ApplyCurrentColorSpace()
         {
-            if (originalImage == null) return;
+            switch (currentColorSpace)
+            {
+                case "RGB":
+                    ApplyRGB();
+                    break;
 
-            // نرسل الخيارات مباشرة لملف المعالجة الخارجي المحترف
-            currentImage = ChannelProcessor.AdjustRgbChannels(
-                originalImage,
-                chkRed.Checked, trackRed.Value,
-                chkGreen.Checked, trackGreen.Value,
-                chkBlue.Checked, trackBlue.Value
-            );
+                case "HSV":
+                    ApplyHSV();
+                    break;
 
-            // عرض النتيجة فوراً على الواجهة
-            pictureBox1.Image = currentImage;
+                case "CMYK":
+                    ApplyCMYK();
+                    break;
+
+                case "LAB":
+                    ApplyLAB();
+                    break;
+
+                case "YUV":
+                    ApplyYUV();
+                    break;
+
+                case "YCbCr":
+                    ApplyYCbCr();
+                    break;
+            }
         }
 
-        private void trackRed_Scroll(object sender, EventArgs e) { ApplyRGB(); }
-        private void trackGreen_Scroll(object sender, EventArgs e) { ApplyRGB(); }
-        private void trackBlue_Scroll(object sender, EventArgs e) { ApplyRGB(); }
+        private int GetChannelValue(string channelName)
+        {
+            foreach (Control c in flowColorControls.Controls)
+            {
+                if (c is ChannelControl channel)
+                {
+                    if (channel.lblName.Text == channelName)
+                    {
+                        return channel.track.Value;
+                    }
+                }
+            }
 
-        private void chkRed_CheckedChanged(object sender, EventArgs e) { ApplyRGB(); }
-        private void chkGreen_CheckedChanged(object sender, EventArgs e) { ApplyRGB(); }
-        private void chkBlue_CheckedChanged(object sender, EventArgs e) { ApplyRGB(); }
+            return 0;
+        }
+
 
         private bool isDragging = false;
 
@@ -347,6 +370,384 @@ namespace pixellab
         {
             isDragging = false;
         }
-       
+        private void InitializeColorSpaces()
+        {
+            colorSpaces =
+                new Dictionary<string, List<ColorChannel>>();
+
+            // RGB
+            colorSpaces["RGB"] =
+                new List<ColorChannel>()
+            {
+                new ColorChannel()
+                {
+                    Name="Red",
+                    Min=-255,
+                    Max=255
+                },
+
+                new ColorChannel()
+                {
+                    Name="Green",
+                    Min=-255,
+                    Max=255
+                },
+
+                new ColorChannel()
+                {
+                    Name="Blue",
+                    Min=-255,
+                    Max=255
+                }
+            };
+
+            // HSV
+            colorSpaces["HSV"] =
+                new List<ColorChannel>()
+            {
+                new ColorChannel()
+                {
+                    Name="Hue",
+                    Min=0,
+                    Max=360
+                },
+
+                new ColorChannel()
+                {
+                    Name="Saturation",
+                    Min=0,
+                    Max=100
+                },
+
+                new ColorChannel()
+                {
+                    Name="Value",
+                    Min=0,
+                    Max=100
+                }
+            };
+
+            // CMYK
+            colorSpaces["CMYK"] =
+                new List<ColorChannel>()
+            {
+                new ColorChannel()
+                {
+                    Name="Cyan",
+                    Min=0,
+                    Max=100
+                },
+
+                new ColorChannel()
+                {
+                    Name="Magenta",
+                    Min=0,
+                    Max=100
+                },
+
+                new ColorChannel()
+                {
+                    Name="Yellow",
+                    Min=0,
+                    Max=100
+                },
+
+                new ColorChannel()
+                {
+                    Name="Black",
+                    Min=0,
+                    Max=100
+                }
+            };
+
+            // LAB
+            colorSpaces["LAB"] =
+                new List<ColorChannel>()
+            {
+                new ColorChannel()
+                {
+                    Name="L",
+                    Min=0,
+                    Max=100
+                },
+
+                new ColorChannel()
+                {
+                    Name="A",
+                    Min=-128,
+                    Max=127
+                },
+
+                new ColorChannel()
+                {
+                    Name="B",
+                    Min=-128,
+                    Max=127
+                }
+            };
+
+            // YUV
+            colorSpaces["YUV"] =
+                new List<ColorChannel>()
+            {
+                new ColorChannel()
+                {
+                    Name="Y",
+                    Min=0,
+                    Max=255
+                },
+
+                new ColorChannel()
+                {
+                    Name="U",
+                    Min=-128,
+                    Max=127
+                },
+
+                new ColorChannel()
+                {
+                    Name="V",
+                    Min=-128,
+                    Max=127
+                }
+            };
+
+            // YCbCr
+            colorSpaces["YCbCr"] =
+                new List<ColorChannel>()
+            {
+                new ColorChannel()
+                {
+                    Name="Y",
+                    Min=16,
+                    Max=235
+                },
+
+                new ColorChannel()
+                {
+                    Name="Cb",
+                    Min=16,
+                    Max=240
+                },
+
+                new ColorChannel()
+                {
+                    Name="Cr",
+                    Min=16,
+                    Max=240
+                }
+            };
+        }
+
+        private void BuildColorControls(string systemName)
+        {
+            currentColorSpace = systemName;
+
+            flowColorControls.Controls.Clear();
+
+            foreach (var channel in colorSpaces[systemName])
+            {
+                ChannelControl control =
+                    new ChannelControl(
+                        channel.Name,
+                        channel.Min,
+                        channel.Max);
+
+                // ربط الحدث
+                control.track.Scroll += ChannelTrackChanged;
+
+                flowColorControls.Controls.Add(control);
+            }
+        }
+        private void ChannelTrackChanged(
+         object sender,
+         EventArgs e)
+        {
+            livePreviewTimer.Stop();
+
+            livePreviewTimer.Start();
+        }
+        private void cmbColorSpaces_SelectedIndexChanged(
+        object sender,
+        EventArgs e)
+        {
+            string selected =
+                cmbColorSpaces.SelectedItem.ToString();
+
+            BuildColorControls(selected);
+        }
+
+        private void InitializeLivePreview()
+        {
+            livePreviewTimer =
+            new System.Windows.Forms.Timer();
+
+            livePreviewTimer.Interval = 120;
+
+            livePreviewTimer.Tick +=
+                LivePreviewTimer_Tick;
+        }
+
+        private void LivePreviewTimer_Tick(
+    object sender,
+    EventArgs e)
+        {
+            livePreviewTimer.Stop();
+
+            ApplyCurrentColorSpace();
+        }
+
+        private void ApplyRGB()
+        {
+            if (originalImage == null)
+                return;
+
+            int r = GetChannelValue("Red");
+
+            int g = GetChannelValue("Green");
+
+            int b = GetChannelValue("Blue");
+
+            currentImage =
+                ImageProcessor.ApplyRGBFast(
+                    originalImage,
+                    r,
+                    g,
+                    b);
+
+            pictureBox1.Image =
+                currentImage;
+        }
+
+
+        private void ApplyHSV()
+        {
+            if (originalImage == null)
+                return;
+
+            double h =
+                GetChannelValue("Hue");
+
+            double s =
+                GetChannelValue("Saturation") / 100.0;
+
+            double v =
+                GetChannelValue("Value") / 100.0;
+
+            currentImage =
+                ImageProcessor.ApplyHSVAdjustment(
+                    originalImage,
+                    h,
+                    s,
+                    v);
+
+            pictureBox1.Image =
+                currentImage;
+        }
+
+        private void ApplyCMYK()
+        {
+            if (originalImage == null)
+                return;
+
+            double c =
+                GetChannelValue("Cyan") / 100.0;
+
+            double m =
+                GetChannelValue("Magenta") / 100.0;
+
+            double y =
+                GetChannelValue("Yellow") / 100.0;
+
+            double k =
+                GetChannelValue("Black") / 100.0;
+
+            currentImage =
+                ImageProcessor.ApplyCMYKAdjustment(
+                    originalImage,
+                    c,
+                    m,
+                    y,
+                    k);
+
+            pictureBox1.Image =
+                currentImage;
+        }
+
+        private void ApplyLAB()
+        {
+            if (originalImage == null)
+                return;
+
+            double l =
+                GetChannelValue("L");
+
+            double a =
+                GetChannelValue("A");
+
+            double b =
+                GetChannelValue("B");
+
+            currentImage =
+                ImageProcessor.ApplyLABAdjustment(
+                    originalImage,
+                    l,
+                    a,
+                    b);
+
+            pictureBox1.Image =
+                currentImage;
+        }
+
+        private void ApplyYUV()
+{
+    if (originalImage == null)
+        return;
+
+    double y =
+        GetChannelValue("Y");
+
+    double u =
+        GetChannelValue("U");
+
+    double v =
+        GetChannelValue("V");
+
+    currentImage =
+        ImageProcessor.ApplyYUVAdjustment(
+            originalImage,
+            y,
+            u,
+            v);
+
+    pictureBox1.Image =
+        currentImage;
+}
+
+      private void ApplyYCbCr()
+{
+    if (originalImage == null)
+        return;
+
+    double y =
+        GetChannelValue("Y");
+
+    double cb =
+        GetChannelValue("Cb");
+
+    double cr =
+        GetChannelValue("Cr");
+
+    currentImage =
+        ImageProcessor.ApplyYCbCrAdjustment(
+            originalImage,
+            y,
+            cb,
+            cr);
+
+    pictureBox1.Image =
+        currentImage;
+}
+
     }
 }

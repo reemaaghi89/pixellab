@@ -1,7 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-
+using pixellab.Converters;
 namespace pixellab
 {
     public static class ImageProcessor
@@ -145,5 +145,487 @@ namespace pixellab
 
             return processedBitmap;
         }
+
+        public static Bitmap ApplyRGBFast(
+    Bitmap sourceImage,
+    int redShift,
+    int greenShift,
+    int blueShift)
+{
+    Bitmap processedBitmap =
+        new Bitmap(sourceImage);
+
+    Rectangle imageBounds =
+        new Rectangle(
+            0,
+            0,
+            processedBitmap.Width,
+            processedBitmap.Height);
+
+    BitmapData bitmapData =
+        processedBitmap.LockBits(
+            imageBounds,
+            ImageLockMode.ReadWrite,
+            PixelFormat.Format32bppRgb);
+
+    unsafe
+    {
+        byte* pixelPointer =
+            (byte*)bitmapData.Scan0;
+
+        int totalBytesCount =
+            bitmapData.Stride *
+            processedBitmap.Height;
+
+        for (int byteIndex = 0;
+            byteIndex < totalBytesCount;
+            byteIndex += 4)
+        {
+            int blue =
+                pixelPointer[byteIndex] +
+                blueShift;
+
+            int green =
+                pixelPointer[byteIndex + 1] +
+                greenShift;
+
+            int red =
+                pixelPointer[byteIndex + 2] +
+                redShift;
+
+            pixelPointer[byteIndex] =
+                (byte)Math.Max(
+                    0,
+                    Math.Min(255, blue));
+
+            pixelPointer[byteIndex + 1] =
+                (byte)Math.Max(
+                    0,
+                    Math.Min(255, green));
+
+            pixelPointer[byteIndex + 2] =
+                (byte)Math.Max(
+                    0,
+                    Math.Min(255, red));
+        }
+    }
+
+    processedBitmap.UnlockBits(bitmapData);
+
+    return processedBitmap;
+}
+
+        public static Bitmap ApplyHSVAdjustment(
+    Bitmap sourceImage,
+    double hueShift,
+    double saturationShift,
+    double valueShift)
+{
+    Bitmap processedBitmap =
+        new Bitmap(sourceImage);
+
+    Rectangle imageBounds =
+        new Rectangle(
+            0,
+            0,
+            processedBitmap.Width,
+            processedBitmap.Height);
+
+    BitmapData bitmapData =
+        processedBitmap.LockBits(
+            imageBounds,
+            ImageLockMode.ReadWrite,
+            PixelFormat.Format32bppRgb);
+
+    unsafe
+    {
+        byte* pixelPointer =
+            (byte*)bitmapData.Scan0;
+
+        int totalBytesCount =
+            bitmapData.Stride *
+            processedBitmap.Height;
+
+        for (int byteIndex = 0;
+            byteIndex < totalBytesCount;
+            byteIndex += 4)
+        {
+            Color originalColor =
+                Color.FromArgb(
+                    pixelPointer[byteIndex + 2],
+                    pixelPointer[byteIndex + 1],
+                    pixelPointer[byteIndex]);
+
+            var hsv =
+                HsvConverter.FromRgb(originalColor);
+
+            double h =
+                (hsv.Hue + hueShift) % 360;
+
+            if (h < 0)
+                h += 360;
+
+            double s =
+                hsv.Saturation +
+                saturationShift;
+
+            double v =
+                hsv.Value +
+                valueShift;
+
+            s = Math.Max(0,
+                Math.Min(1, s));
+
+            v = Math.Max(0,
+                Math.Min(1, v));
+
+            Color newColor =
+                HsvConverter.ToRgb(h, s, v);
+
+            pixelPointer[byteIndex] =
+                newColor.B;
+
+            pixelPointer[byteIndex + 1] =
+                newColor.G;
+
+            pixelPointer[byteIndex + 2] =
+                newColor.R;
+        }
+    }
+
+    processedBitmap.UnlockBits(bitmapData);
+
+    return processedBitmap;
+}
+
+    public static Bitmap ApplyCMYKAdjustment(
+    Bitmap sourceImage,
+    double cyanShift,
+    double magentaShift,
+    double yellowShift,
+    double blackShift)
+{
+    Bitmap processedBitmap =
+        new Bitmap(sourceImage);
+
+    Rectangle imageBounds =
+        new Rectangle(
+            0,
+            0,
+            processedBitmap.Width,
+            processedBitmap.Height);
+
+    BitmapData bitmapData =
+        processedBitmap.LockBits(
+            imageBounds,
+            ImageLockMode.ReadWrite,
+            PixelFormat.Format32bppRgb);
+
+    unsafe
+    {
+        byte* pixelPointer =
+            (byte*)bitmapData.Scan0;
+
+        int totalBytesCount =
+            bitmapData.Stride *
+            processedBitmap.Height;
+
+        for (int byteIndex = 0;
+            byteIndex < totalBytesCount;
+            byteIndex += 4)
+        {
+            Color originalColor =
+                Color.FromArgb(
+                    pixelPointer[byteIndex + 2],
+                    pixelPointer[byteIndex + 1],
+                    pixelPointer[byteIndex]);
+
+            var cmyk =
+                CmykConverter.FromRgb(
+                    originalColor);
+
+            double c =
+                cmyk.C + cyanShift;
+
+            double m =
+                cmyk.M + magentaShift;
+
+            double y =
+                cmyk.Y + yellowShift;
+
+            double k =
+                cmyk.K + blackShift;
+
+            c = Math.Max(0,
+                Math.Min(1, c));
+
+            m = Math.Max(0,
+                Math.Min(1, m));
+
+            y = Math.Max(0,
+                Math.Min(1, y));
+
+            k = Math.Max(0,
+                Math.Min(1, k));
+
+            Color newColor =
+                CmykConverter.ToRgb(
+                    c,
+                    m,
+                    y,
+                    k);
+
+            pixelPointer[byteIndex] =
+                newColor.B;
+
+            pixelPointer[byteIndex + 1] =
+                newColor.G;
+
+            pixelPointer[byteIndex + 2] =
+                newColor.R;
+        }
+    }
+
+    processedBitmap.UnlockBits(bitmapData);
+
+    return processedBitmap;
+}
+
+public static Bitmap ApplyLABAdjustment(
+    Bitmap sourceImage,
+    double lShift,
+    double aShift,
+    double bShift)
+{
+    Bitmap processedBitmap =
+        new Bitmap(sourceImage);
+
+    Rectangle imageBounds =
+        new Rectangle(
+            0,
+            0,
+            processedBitmap.Width,
+            processedBitmap.Height);
+
+    BitmapData bitmapData =
+        processedBitmap.LockBits(
+            imageBounds,
+            ImageLockMode.ReadWrite,
+            PixelFormat.Format32bppRgb);
+
+    unsafe
+    {
+        byte* pixelPointer =
+            (byte*)bitmapData.Scan0;
+
+        int totalBytesCount =
+            bitmapData.Stride *
+            processedBitmap.Height;
+
+        for (int byteIndex = 0;
+            byteIndex < totalBytesCount;
+            byteIndex += 4)
+        {
+            Color originalColor =
+                Color.FromArgb(
+                    pixelPointer[byteIndex + 2],
+                    pixelPointer[byteIndex + 1],
+                    pixelPointer[byteIndex]);
+
+            var lab =
+                LabConverter.FromRgb(
+                    originalColor);
+
+            double l =
+                lab.L + lShift;
+
+            double a =
+                lab.A + aShift;
+
+            double b =
+                lab.B + bShift;
+
+            // clamp
+            l = Math.Max(0,
+                Math.Min(100, l));
+
+            a = Math.Max(-128,
+                Math.Min(127, a));
+
+            b = Math.Max(-128,
+                Math.Min(127, b));
+
+            Color newColor =
+                LabConverter.ToRgb(
+                    l,
+                    a,
+                    b);
+
+            pixelPointer[byteIndex] =
+                newColor.B;
+
+            pixelPointer[byteIndex + 1] =
+                newColor.G;
+
+            pixelPointer[byteIndex + 2] =
+                newColor.R;
+        }
+    }
+
+    processedBitmap.UnlockBits(bitmapData);
+
+    return processedBitmap;
+}
+
+public static Bitmap ApplyYUVAdjustment(
+    Bitmap sourceImage,
+    double yShift,
+    double uShift,
+    double vShift)
+{
+    Bitmap processedBitmap =
+        new Bitmap(sourceImage);
+
+    Rectangle imageBounds =
+        new Rectangle(
+            0,
+            0,
+            processedBitmap.Width,
+            processedBitmap.Height);
+
+    BitmapData bitmapData =
+        processedBitmap.LockBits(
+            imageBounds,
+            ImageLockMode.ReadWrite,
+            PixelFormat.Format32bppRgb);
+
+    unsafe
+    {
+        byte* pixelPointer =
+            (byte*)bitmapData.Scan0;
+
+        int totalBytesCount =
+            bitmapData.Stride *
+            processedBitmap.Height;
+
+        for (int byteIndex = 0;
+            byteIndex < totalBytesCount;
+            byteIndex += 4)
+        {
+            Color originalColor =
+                Color.FromArgb(
+                    pixelPointer[byteIndex + 2],
+                    pixelPointer[byteIndex + 1],
+                    pixelPointer[byteIndex]);
+
+            var yuv =
+                YuvConverter.FromRgb(
+                    originalColor);
+
+            double y =
+                yuv.Y + yShift;
+
+            double u =
+                yuv.U + uShift;
+
+            double v =
+                yuv.V + vShift;
+
+            Color newColor =
+                YuvConverter.ToRgb(
+                    y,
+                    u,
+                    v);
+
+            pixelPointer[byteIndex] =
+                newColor.B;
+
+            pixelPointer[byteIndex + 1] =
+                newColor.G;
+
+            pixelPointer[byteIndex + 2] =
+                newColor.R;
+        }
+    }
+
+    processedBitmap.UnlockBits(bitmapData);
+
+    return processedBitmap;
+}
+public static Bitmap ApplyYCbCrAdjustment(
+    Bitmap sourceImage,
+    double yShift,
+    double cbShift,
+    double crShift)
+{
+    Bitmap processedBitmap =
+        new Bitmap(sourceImage);
+
+    Rectangle imageBounds =
+        new Rectangle(
+            0,
+            0,
+            processedBitmap.Width,
+            processedBitmap.Height);
+
+    BitmapData bitmapData =
+        processedBitmap.LockBits(
+            imageBounds,
+            ImageLockMode.ReadWrite,
+            PixelFormat.Format32bppRgb);
+
+    unsafe
+    {
+        byte* pixelPointer =
+            (byte*)bitmapData.Scan0;
+
+        int totalBytesCount =
+            bitmapData.Stride *
+            processedBitmap.Height;
+
+        for (int byteIndex = 0;
+            byteIndex < totalBytesCount;
+            byteIndex += 4)
+        {
+            Color originalColor =
+                Color.FromArgb(
+                    pixelPointer[byteIndex + 2],
+                    pixelPointer[byteIndex + 1],
+                    pixelPointer[byteIndex]);
+
+            var ycbcr =
+                YcbcrConverter.FromRgb(
+                    originalColor);
+
+            double y =
+                ycbcr.Y + yShift;
+
+            double cb =
+                ycbcr.Cb + cbShift;
+
+            double cr =
+                ycbcr.Cr + crShift;
+
+            Color newColor =
+                YcbcrConverter.ToRgb(
+                    y,
+                    cb,
+                    cr);
+
+            pixelPointer[byteIndex] =
+                newColor.B;
+
+            pixelPointer[byteIndex + 1] =
+                newColor.G;
+
+            pixelPointer[byteIndex + 2] =
+                newColor.R;
+        }
+    }
+
+    processedBitmap.UnlockBits(bitmapData);
+
+    return processedBitmap;
+}
     }
 }
