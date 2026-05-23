@@ -79,22 +79,23 @@ namespace pixellab
             }
             return 0;
         }
-// دالة لتحديث قيمة سلايدر معين باسمه وتحديث الليبل التابع له
-public static void SetSliderValue(FlowLayoutPanel panel, string sliderName, int value)
-{
-    foreach (Control control in panel.Controls)
-    {
-        if (control is ChannelControl slider && slider.lblName.Text == sliderName)
+        public static void SetSliderValue(FlowLayoutPanel panel, string sliderName, int value)
         {
-            if (value >= slider.track.Minimum && value <= slider.track.Maximum)
+            foreach (Control control in panel.Controls)
             {
-                slider.track.Value = value;
-                slider.UpdateValueLabel(); 
+                if (control is ChannelControl slider && slider.lblName.Text == sliderName)
+                {
+                    var handler = slider.track.Tag as EventHandler; // نفترض أننا خزنّا الحدث هنا
+                    
+                    if (value >= slider.track.Minimum && value <= slider.track.Maximum)
+                    {
+                        slider.track.Value = value;
+                        slider.UpdateValueLabel();
+                    }
+                    break;
+                }
             }
-            break;
         }
-    }
-}
 
     }
 }

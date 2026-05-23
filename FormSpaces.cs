@@ -2,7 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using pixellab.Renderers;
-using pixellab.Converters; // هنا السحر كله!
+using pixellab.Converters; 
 
 namespace pixellab
 {
@@ -16,7 +16,7 @@ namespace pixellab
 
         private Color localSelectedColor = Color.Blue; 
         private string cachedReportText = string.Empty;
-        private ListBox listSystems;
+        public ListBox listSystems;
         private Panel panel3D;
 
         public FormSpaces()
@@ -131,8 +131,19 @@ namespace pixellab
         }
         private void ListSystems_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (listSystems.SelectedItem == null) return;
+
             selectedSystem = listSystems.SelectedItem.ToString();
             panel3D.Invalidate(); 
+            // if (selectedSystem.Contains("Lab") || selectedSystem.Contains("LAB"))
+            // {
+            //     MessageBox.Show($"تم الضغط على نظام الـ Lab بنجاح!\nالاسم المكتوب في الـ ListBox هو: \"{selectedSystem}\"");
+            // }
+
+            if (this.Owner is Form1 mainForm)
+            {
+                mainForm.SetSelectedSystemFrom3D(selectedSystem);
+            }
         }
 
         private void Panel3D_Paint(object sender, PaintEventArgs e)
@@ -204,19 +215,24 @@ namespace pixellab
                 {
                     pickedColor = CmykRenderer.GetColorAtPointDirect(e.Location, panel3D.Width, panel3D.Height, angleX, angleY, zoomFactor);
                 }
-
                 if (pickedColor.ToArgb() != Color.Transparent.ToArgb())
                 {
                     localSelectedColor = pickedColor;
                     UpdateSyncReport(localSelectedColor); 
                     panel3D.Invalidate(); 
-                    if (Application.OpenForms["Form1"] is Form1 mainForm)
+
+                    // التعديل هنا: نتحقق من الـ Owner المباشر للفورم
+                    if (this.Owner is Form1 mainForm)
                     {
-                        mainForm.UpdateSlidersFrom3D(pickedColor,selectedSystem);
+                        // إرسال اللون لتابع التحديث في Form1
+                        mainForm.UpdateSlidersFrom3D(pickedColor, selectedSystem);
                     }
-                }
+
+                
+               
             }
         }
+    }
         
         private void Panel3D_MouseMove(object sender, MouseEventArgs e)
         {

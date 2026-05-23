@@ -65,5 +65,8 @@ namespace pixellab
         {
             return _colorSpaces.ContainsKey(systemName) ? _colorSpaces[systemName] : new List<ColorChannel>();
         }
+
+
+        
     }
 }
