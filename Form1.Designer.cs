@@ -330,7 +330,7 @@ namespace pixellab
 
             this.NumberOfColors.BorderStyle = BorderStyle.FixedSingle;
 
-            this.NumberOfColors.Font = new Font("Segoe UI", 10);
+            this.NumberOfColors.Font = new Font("Segoe UI", 6);
 
             this.NumberOfColors.Text = "";
             this.NumberOfColors.Margin = new Padding(5, 0, 0, 0);
@@ -424,7 +424,7 @@ namespace pixellab
 
             this.panelColorCard.Width = 190;
 
-            this.panelColorCard.Height = 380;
+            this.panelColorCard.Height = 420;
 
             this.panelColorCard.BackColor =
                 Color.FromArgb(32, 32, 32);
