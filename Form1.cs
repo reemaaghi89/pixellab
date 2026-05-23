@@ -168,19 +168,26 @@ namespace pixellab
         private void btnReset_Click(object sender, EventArgs e)
         {
             if (originalImage == null) return;
-
+            livePreviewTimer.Stop();
+            if (currentImage != null) currentImage.Dispose();
             currentImage = new Bitmap(originalImage);
             pictureBox1.Image = currentImage;
+
             selectedPixelColor = Color.FromArgb(255, 255, 255);
+            panelSelectedColor.BackColor = Color.White;
             panelCube.Invalidate();
+
             isGrayscaleActive = false;
             isBlackAndWhiteActive = false;
             isQuantizeActive = false;
-            btn.BackColor = Color.FromArgb(45, 45, 48); 
+            
             btnGray.BackColor = Color.FromArgb(45, 45, 48); 
             btnQuantize.BackColor = Color.FromArgb(45, 45, 48); 
-            // =========================================================================
-        }
+        
+            BuildColorControls(currentColorSpace);
+
+            pictureBox1.Refresh();
+        }       
         private void btnsave_Click(object sender, EventArgs e)
         {
             if (!HasImage()) return;
@@ -218,7 +225,7 @@ namespace pixellab
 
                 panelSelectedColor.BackColor = pixelColor;
                 lblInspectorInfo.Text = infoReport;
-                _colorManager.UpdateSlidersFrom3D(pixelColor, currentColorSpace);
+                // _colorManager.UpdateSlidersFrom3D(pixelColor, currentColorSpace);
             }
         }
         
@@ -229,31 +236,40 @@ namespace pixellab
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
             LoadImage(files[0]);
         }
-    /// <summary>
-    /// ///////////////////////////////////////////////////////////
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
 
         private void btnQuantizeColors_Click(object sender, EventArgs e)
         {
             if (!HasImage()) return;
+            
             Button btn = (Button)sender;
-            if (!isQuantizeActive)
+            try
             {
-                Bitmap quantizedResult = ImageProcessor.QuantizeImageColors((Bitmap)currentImage, levels: 4);
-                currentImage = quantizedResult;
-                pictureBox1.Image = currentImage;
-                isQuantizeActive = true;
-                btn.BackColor = Color.FromArgb(0, 122, 204);
+                if (!isQuantizeActive)
+                {
+                    if (!int.TryParse(NumberOfColors.Text, out int myLevels) || myLevels < 3 || myLevels > 255)
+                    {
+                        MessageBox.Show("الرجاء إدخال رقم صحيح بين 3 و 255", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    isQuantizeActive = true;
+                    btn.BackColor = Color.FromArgb(0, 122, 204);
+                }
+                else
+                {
+                    isQuantizeActive = false;
+                    btn.BackColor = Color.FromArgb(45, 45, 48);
+                }
+
+                livePreviewTimer.Stop();
+                livePreviewTimer.Start();
             }
-            else
+            catch (Exception ex)
             {
-                btnReset_Click(null, null);
-                isQuantizeActive = false;
-                btn.BackColor = Color.FromArgb(45, 45, 48);
+                MessageBox.Show("حدث خطأ غير متوقع أثناء معالجة الألوان: " + ex.Message, "خطأ تقني", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void btnConvertGrayscale_Click(object sender, EventArgs e)
         {
             if (!HasImage()) return;
@@ -261,51 +277,48 @@ namespace pixellab
 
             if (!isGrayscaleActive)
             {
-                currentImage = ImageProcessor.ConvertToGrayscale((Bitmap)currentImage);
-                pictureBox1.Image = currentImage;
                 isGrayscaleActive = true;
                 btn.BackColor = Color.FromArgb(0, 122, 204); 
             }
             else
             {
-                btnReset_Click(null, null); 
                 isGrayscaleActive = false;
                 btn.BackColor = Color.FromArgb(45, 45, 48);
             }
+
+            livePreviewTimer.Stop();
+            livePreviewTimer.Start();
         }
         private void btnConvertBlackAndWhite_Click(object sender, EventArgs e)
         {
             if (!HasImage()) return;
             Button btn = (Button)sender;
+
             if (!isBlackAndWhiteActive)
             {
-                currentImage = ImageProcessor.ConvertToBlackAndWhite((Bitmap)currentImage);
-                pictureBox1.Image = currentImage;
                 isBlackAndWhiteActive = true;
                 btn.BackColor = Color.FromArgb(0, 122, 204);
             }
             else
             {
-                btnReset_Click(null, null);
                 isBlackAndWhiteActive = false;
                 btn.BackColor = Color.FromArgb(45, 45, 48);
             }
-        }
 
+            livePreviewTimer.Stop();
+            livePreviewTimer.Start();
+        }
+        //===========================================================
         private void cmbColorSpaces_SelectedIndexChanged(object sender, EventArgs e)
         {
-            // 1. إذا كان التغيير قادماً أصلاً من نقرة في الـ 3D، نتوقف فوراً لمنع التكرار (التعليق)
             if (isSyncingSystemFrom3D) return; 
 
             string selectedShortName = cmbColorSpaces.SelectedItem.ToString();
             
-            // 2. بناء السلايدرات كالمعتاد
             BuildColorControls(selectedShortName);
 
-            // 3. التعديل الجديد: نغير التحديد في فورم الـ 3D ليطابق اختيارنا هنا
             if (_spaceForm != null && !_spaceForm.IsDisposed)
             {
-                // تحويل الاسم القصير لاسم كامل ليفهمه الـ ListBox في FormSpaces
                 string fullName = selectedShortName;
                 if (selectedShortName == "RGB") fullName = "RGB Cube";
                 else if (selectedShortName == "HSV") fullName = "HSV Cone";
@@ -322,10 +335,40 @@ namespace pixellab
         private void LivePreviewTimer_Tick(object sender, EventArgs e)
         {
             livePreviewTimer.Stop();
+            if (originalImage == null) return;
 
-            ImageEffectApplier.Apply(currentColorSpace, originalImage, flowColorControls, pictureBox1);
-        }
-        private void InitializeLivePreview()
+            Bitmap processedBmp = new Bitmap(originalImage);
+
+            if (isGrayscaleActive)
+            {
+                Bitmap temp = ImageProcessor.ConvertToGrayscale(processedBmp);
+                processedBmp.Dispose();
+                processedBmp = temp;
+            }
+
+            if (isBlackAndWhiteActive)
+            {
+                Bitmap temp = ImageProcessor.ConvertToBlackAndWhite(processedBmp);
+                processedBmp.Dispose();
+                processedBmp = temp;
+            }
+
+            if (isQuantizeActive)
+            {
+                if (int.TryParse(NumberOfColors.Text, out int myLevels) && myLevels >= 3 && myLevels <= 255)
+                {
+                    Bitmap temp = ImageProcessor.QuantizeImageColors(processedBmp, myLevels);
+                    processedBmp.Dispose();
+                    processedBmp = temp;
+                }
+            }
+
+            ImageEffectApplier.Apply(currentColorSpace, processedBmp, flowColorControls, pictureBox1);
+
+            if (currentImage != null) currentImage.Dispose();
+            currentImage = processedBmp;
+        }       
+         private void InitializeLivePreview()
         {
             livePreviewTimer =new System.Windows.Forms.Timer();
             livePreviewTimer.Interval = 120;
@@ -388,12 +431,10 @@ namespace pixellab
                 if (itemText.Contains(shortName))
                 {
                     cmbColorSpaces.SelectedItem = item;
-                    
                     BuildColorControls(item.ToString());
                     break; 
                 }
             }
-
             isSyncingSystemFrom3D = false;
             livePreviewTimer.Stop();
             livePreviewTimer.Start();

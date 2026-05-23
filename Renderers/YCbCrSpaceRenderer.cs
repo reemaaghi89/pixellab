@@ -15,7 +15,6 @@ namespace pixellab.Renderers
             double cosX = Math.Cos(radX), sinX = Math.Sin(radX);
             double cosY = Math.Cos(radY), sinY = Math.Sin(radY);
 
-            // التدوير ثلاثي الأبعاد حول المحاور الفراغية
             double rY = y * cosX - z * sinX;
             double rZ = y * sinX + z * cosX;
             double rX = x * cosY + rZ * sinY;

@@ -40,7 +40,7 @@ namespace pixellab
 
         private FlowLayoutPanel flowSidebar;
         private FlowLayoutPanel flowColorControls;
-
+        public System.Windows.Forms.TextBox NumberOfColors;
         private ComboBox cmbColorSpaces;
         private Panel panelCube;
 

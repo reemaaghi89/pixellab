@@ -9,146 +9,208 @@ namespace pixellab
     {
         public static unsafe Bitmap ConvertToGrayscale(Bitmap source)
         {
-            Bitmap bmp = new Bitmap(source);
-            BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-            byte* ptr = (byte*)data.Scan0;
-            int bytes = data.Stride * bmp.Height;
+            Bitmap bmp = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppRgb);
+            BitmapData srcData = source.LockBits(new Rectangle(0, 0, source.Width, source.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+            BitmapData dstData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+
+            byte* srcPtr = (byte*)srcData.Scan0;
+            byte* dstPtr = (byte*)dstData.Scan0;
+            int bytes = srcData.Stride * source.Height;
+
             for (int i = 0; i < bytes; i += 4)
             {
-                byte gray = (byte)(0.299 * ptr[i + 2] + 0.587 * ptr[i + 1] + 0.114 * ptr[i]);
-                ptr[i] = ptr[i + 1] = ptr[i + 2] = gray;
+                byte gray = (byte)(0.299 * srcPtr[i + 2] + 0.587 * srcPtr[i + 1] + 0.114 * srcPtr[i]);
+                dstPtr[i] = dstPtr[i + 1] = dstPtr[i + 2] = gray;
             }
-            bmp.UnlockBits(data);
+
+            source.UnlockBits(srcData);
+            bmp.UnlockBits(dstData);
             return bmp;
         }
 
         public static unsafe Bitmap ConvertToBlackAndWhite(Bitmap source, byte threshold = 128)
         {
-            Bitmap bmp = new Bitmap(source);
-            BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-            byte* ptr = (byte*)data.Scan0;
-            int bytes = data.Stride * bmp.Height;
+            Bitmap bmp = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppRgb);
+            BitmapData srcData = source.LockBits(new Rectangle(0, 0, source.Width, source.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+            BitmapData dstData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+
+            byte* srcPtr = (byte*)srcData.Scan0;
+            byte* dstPtr = (byte*)dstData.Scan0;
+            int bytes = srcData.Stride * source.Height;
+
             for (int i = 0; i < bytes; i += 4)
             {
-                byte intensity = (byte)(0.299 * ptr[i + 2] + 0.587 * ptr[i + 1] + 0.114 * ptr[i]);
+                byte intensity = (byte)(0.299 * srcPtr[i + 2] + 0.587 * srcPtr[i + 1] + 0.114 * srcPtr[i]);
                 byte val = (intensity >= threshold) ? (byte)255 : (byte)0;
-                ptr[i] = ptr[i + 1] = ptr[i + 2] = val;
+                dstPtr[i] = dstPtr[i + 1] = dstPtr[i + 2] = val;
             }
-            bmp.UnlockBits(data);
+
+            source.UnlockBits(srcData);
+            bmp.UnlockBits(dstData);
             return bmp;
         }
 
-        public static unsafe Bitmap QuantizeImageColors(Bitmap source, int levels = 4)
+        public static unsafe Bitmap QuantizeImageColors(Bitmap source, int levels)
         {
-            Bitmap bmp = new Bitmap(source);
-            BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-            byte* ptr = (byte*)data.Scan0;
-            int bytes = data.Stride * bmp.Height;
-            int step = 256 / levels;
+            if (levels < 2) levels = 2;
+            if (levels > 256) levels = 256;
+
+            Bitmap bmp = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppRgb);
+            BitmapData srcData = source.LockBits(new Rectangle(0, 0, source.Width, source.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+            BitmapData dstData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+            
+            byte* srcPtr = (byte*)srcData.Scan0;
+            byte* dstPtr = (byte*)dstData.Scan0;
+            int bytes = srcData.Stride * source.Height;
+            
+            float step = 255.0f / (levels - 1);
+
             for (int i = 0; i < bytes; i += 4)
             {
-                ptr[i] = (byte)((ptr[i] / step) * step);
-                ptr[i + 1] = (byte)((ptr[i + 1] / step) * step);
-                ptr[i + 2] = (byte)((ptr[i + 2] / step) * step);
+                for (int channel = 0; channel < 3; channel++)
+                {
+                    float val = srcPtr[i + channel];
+                    int quantizedValue = (int)Math.Round(val / step) * (int)step;
+                    dstPtr[i + channel] = (byte)Math.Clamp(quantizedValue, 0, 255);
+                }
             }
-            bmp.UnlockBits(data);
+            
+            source.UnlockBits(srcData);
+            bmp.UnlockBits(dstData);
             return bmp;
         }
 
         public static unsafe Bitmap ApplyRGBFast(Bitmap source, int r, int g, int b)
         {
-            Bitmap bmp = new Bitmap(source);
-            BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-            byte* ptr = (byte*)data.Scan0;
-            int bytes = data.Stride * bmp.Height;
+            Bitmap bmp = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppRgb);
+            BitmapData srcData = source.LockBits(new Rectangle(0, 0, source.Width, source.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+            BitmapData dstData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+
+            byte* srcPtr = (byte*)srcData.Scan0;
+            byte* dstPtr = (byte*)dstData.Scan0;
+            int bytes = srcData.Stride * source.Height;
+
             for (int i = 0; i < bytes; i += 4)
             {
-                ptr[i + 2] = (byte)Math.Max(0, Math.Min(255, ptr[i + 2] + r));
-                ptr[i + 1] = (byte)Math.Max(0, Math.Min(255, ptr[i + 1] + g));
-                ptr[i] = (byte)Math.Max(0, Math.Min(255, ptr[i] + b));
+                dstPtr[i + 2] = (byte)Math.Clamp(srcPtr[i + 2] + r, 0, 255);
+                dstPtr[i + 1] = (byte)Math.Clamp(srcPtr[i + 1] + g, 0, 255);
+                dstPtr[i]     = (byte)Math.Clamp(srcPtr[i] + b, 0, 255);
             }
-            bmp.UnlockBits(data);
+
+            source.UnlockBits(srcData);
+            bmp.UnlockBits(dstData);
             return bmp;
         }
 
         public static unsafe Bitmap ApplyHSVAdjustment(Bitmap source, double hS, double sS, double vS)
         {
-            Bitmap bmp = new Bitmap(source);
-            BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-            byte* ptr = (byte*)data.Scan0;
-            int bytes = data.Stride * bmp.Height;
+            Bitmap bmp = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppRgb);
+            BitmapData srcData = source.LockBits(new Rectangle(0, 0, source.Width, source.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+            BitmapData dstData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+
+            byte* srcPtr = (byte*)srcData.Scan0;
+            byte* dstPtr = (byte*)dstData.Scan0;
+            int bytes = srcData.Stride * source.Height;
+
             for (int i = 0; i < bytes; i += 4)
             {
-                var hsv = HsvConverter.FromRgb(Color.FromArgb(ptr[i + 2], ptr[i + 1], ptr[i]));
+                var hsv = HsvConverter.FromRgb(Color.FromArgb(srcPtr[i + 2], srcPtr[i + 1], srcPtr[i]));
                 double h = (hsv.Hue + hS) % 360; if (h < 0) h += 360;
-                var nc = HsvConverter.ToRgb(h, Math.Max(0, Math.Min(1, hsv.Saturation + sS)), Math.Max(0, Math.Min(1, hsv.Value + vS)));
-                ptr[i] = nc.B; ptr[i + 1] = nc.G; ptr[i + 2] = nc.R;
+                var nc = HsvConverter.ToRgb(h, Math.Clamp(hsv.Saturation + sS, 0, 1), Math.Clamp(hsv.Value + vS, 0, 1));
+                dstPtr[i] = nc.B; dstPtr[i + 1] = nc.G; dstPtr[i + 2] = nc.R;
             }
-            bmp.UnlockBits(data);
+
+            source.UnlockBits(srcData);
+            bmp.UnlockBits(dstData);
             return bmp;
         }
 
         public static unsafe Bitmap ApplyCMYKAdjustment(Bitmap source, double cS, double mS, double yS, double kS)
         {
-            Bitmap bmp = new Bitmap(source);
-            BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-            byte* ptr = (byte*)data.Scan0;
-            int bytes = data.Stride * bmp.Height;
+            Bitmap bmp = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppRgb);
+            BitmapData srcData = source.LockBits(new Rectangle(0, 0, source.Width, source.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+            BitmapData dstData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+
+            byte* srcPtr = (byte*)srcData.Scan0;
+            byte* dstPtr = (byte*)dstData.Scan0;
+            int bytes = srcData.Stride * source.Height;
+
             for (int i = 0; i < bytes; i += 4)
             {
-                var cmyk = CmykConverter.FromRgb(Color.FromArgb(ptr[i + 2], ptr[i + 1], ptr[i]));
-                var nc = CmykConverter.ToRgb(Math.Max(0, Math.Min(1, cmyk.C + cS)), Math.Max(0, Math.Min(1, cmyk.M + mS)), Math.Max(0, Math.Min(1, cmyk.Y + yS)), Math.Max(0, Math.Min(1, cmyk.K + kS)));
-                ptr[i] = nc.B; ptr[i + 1] = nc.G; ptr[i + 2] = nc.R;
+                var cmyk = CmykConverter.FromRgb(Color.FromArgb(srcPtr[i + 2], srcPtr[i + 1], srcPtr[i]));
+                var nc = CmykConverter.ToRgb(Math.Clamp(cmyk.C + cS, 0, 1), Math.Clamp(cmyk.M + mS, 0, 1), Math.Clamp(cmyk.Y + yS, 0, 1), Math.Clamp(cmyk.K + kS, 0, 1));
+                dstPtr[i] = nc.B; dstPtr[i + 1] = nc.G; dstPtr[i + 2] = nc.R;
             }
-            bmp.UnlockBits(data);
+
+            source.UnlockBits(srcData);
+            bmp.UnlockBits(dstData);
             return bmp;
         }
 
         public static unsafe Bitmap ApplyLABAdjustment(Bitmap source, double lS, double aS, double bS)
         {
-            Bitmap bmp = new Bitmap(source);
-            BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-            byte* ptr = (byte*)data.Scan0;
-            int bytes = data.Stride * bmp.Height;
+            Bitmap bmp = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppRgb);
+            BitmapData srcData = source.LockBits(new Rectangle(0, 0, source.Width, source.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+            BitmapData dstData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+
+            byte* srcPtr = (byte*)srcData.Scan0;
+            byte* dstPtr = (byte*)dstData.Scan0;
+            int bytes = srcData.Stride * source.Height;
+
             for (int i = 0; i < bytes; i += 4)
             {
-                var lab = LabConverter.FromRgb(Color.FromArgb(ptr[i + 2], ptr[i + 1], ptr[i]));
-                var nc = LabConverter.ToRgb(Math.Max(0, Math.Min(100, lab.L + lS)), Math.Max(-128, Math.Min(127, lab.A + aS)), Math.Max(-128, Math.Min(127, lab.B + bS)));
-                ptr[i] = nc.B; ptr[i + 1] = nc.G; ptr[i + 2] = nc.R;
+                var lab = LabConverter.FromRgb(Color.FromArgb(srcPtr[i + 2], srcPtr[i + 1], srcPtr[i]));
+                // ضبط الحدود الرياضية الصارمة لقيم الـ Lab لمنع التخبيص
+                var nc = LabConverter.ToRgb(Math.Clamp(lab.L + lS, 0, 100), Math.Clamp(lab.A + aS, -128, 127), Math.Clamp(lab.B + bS, -128, 127));
+                dstPtr[i] = nc.B; dstPtr[i + 1] = nc.G; dstPtr[i + 2] = nc.R;
             }
-            bmp.UnlockBits(data);
+
+            source.UnlockBits(srcData);
+            bmp.UnlockBits(dstData);
             return bmp;
         }
 
         public static unsafe Bitmap ApplyYUVAdjustment(Bitmap source, double yS, double uS, double vS)
         {
-            Bitmap bmp = new Bitmap(source);
-            BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-            byte* ptr = (byte*)data.Scan0;
-            int bytes = data.Stride * bmp.Height;
+            Bitmap bmp = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppRgb);
+            BitmapData srcData = source.LockBits(new Rectangle(0, 0, source.Width, source.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+            BitmapData dstData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+
+            byte* srcPtr = (byte*)srcData.Scan0;
+            byte* dstPtr = (byte*)dstData.Scan0;
+            int bytes = srcData.Stride * source.Height;
+
             for (int i = 0; i < bytes; i += 4)
             {
-                var yuv = YuvConverter.FromRgb(Color.FromArgb(ptr[i + 2], ptr[i + 1], ptr[i]));
-                var nc = YuvConverter.ToRgb(yuv.Y + yS, yuv.U + uS, yuv.V + vS);
-                ptr[i] = nc.B; ptr[i + 1] = nc.G; ptr[i + 2] = nc.R;
+                var yuv = YuvConverter.FromRgb(Color.FromArgb(srcPtr[i + 2], srcPtr[i + 1], srcPtr[i]));
+                var nc = YuvConverter.ToRgb(Math.Clamp(yuv.Y + yS, 0, 1), Math.Clamp(yuv.U + uS, -0.436, 0.436), Math.Clamp(yuv.V + vS, -0.615, 0.615));
+                dstPtr[i] = nc.B; dstPtr[i + 1] = nc.G; dstPtr[i + 2] = nc.R;
             }
-            bmp.UnlockBits(data);
+
+            source.UnlockBits(srcData);
+            bmp.UnlockBits(dstData);
             return bmp;
         }
 
         public static unsafe Bitmap ApplyYCbCrAdjustment(Bitmap source, double yS, double cbS, double crS)
         {
-            Bitmap bmp = new Bitmap(source);
-            BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-            byte* ptr = (byte*)data.Scan0;
-            int bytes = data.Stride * bmp.Height;
+            Bitmap bmp = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppRgb);
+            BitmapData srcData = source.LockBits(new Rectangle(0, 0, source.Width, source.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+            BitmapData dstData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+
+            byte* srcPtr = (byte*)srcData.Scan0;
+            byte* dstPtr = (byte*)dstData.Scan0;
+            int bytes = srcData.Stride * source.Height;
+
             for (int i = 0; i < bytes; i += 4)
             {
-                var ycbcr = YcbcrConverter.FromRgb(Color.FromArgb(ptr[i + 2], ptr[i + 1], ptr[i]));
-                var nc = YcbcrConverter.ToRgb(ycbcr.Y + yS, ycbcr.Cb + cbS, ycbcr.Cr + crS);
-                ptr[i] = nc.B; ptr[i + 1] = nc.G; ptr[i + 2] = nc.R;
+                var ycbcr = YcbcrConverter.FromRgb(Color.FromArgb(srcPtr[i + 2], srcPtr[i + 1], srcPtr[i]));
+                var nc = YcbcrConverter.ToRgb(Math.Clamp(ycbcr.Y + yS, 0, 255), Math.Clamp(ycbcr.Cb + cbS, 0, 255), Math.Clamp(ycbcr.Cr + crS, 0, 255));
+                dstPtr[i] = nc.B; dstPtr[i + 1] = nc.G; dstPtr[i + 2] = nc.R;
             }
-            bmp.UnlockBits(data);
+
+            source.UnlockBits(srcData);
+            bmp.UnlockBits(dstData);
             return bmp;
         }
     }

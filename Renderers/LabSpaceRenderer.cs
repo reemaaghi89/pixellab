@@ -8,10 +8,9 @@ namespace pixellab.Renderers
 {
     public static class LabRenderer
     {
-        private const int L_Steps = 15;   // زيادة الخطوات لنعومة أكثر
-        private const int Segments = 30;  // دقة دائرية أعلى
+        private const int L_Steps = 15;   
+        private const int Segments = 30;  
 
-        // كلاس داخلي صغير لحفظ بيانات الوجه وعمقه قبل الرسم
         private class LabFace
         {
             public PointF[] Points { get; set; }
