@@ -365,6 +365,9 @@ namespace pixellab
                 _colorManager.IsUpdatingFrom3D = false;
                 
                 panelSelectedColor.BackColor = pickedColor;
+
+                livePreviewTimer.Stop();
+                livePreviewTimer.Start();
             }
         }
   
@@ -392,6 +395,8 @@ namespace pixellab
             }
 
             isSyncingSystemFrom3D = false;
+            livePreviewTimer.Stop();
+            livePreviewTimer.Start();
         }
        
     }
