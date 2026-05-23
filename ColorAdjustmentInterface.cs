@@ -11,7 +11,7 @@ namespace pixellab
         public TrackBar track;
 
         public CheckBox chkEnable;
-
+        public bool IsChannelEnabled => chkEnable.Checked;
         public ChannelControl(
             string channelName,int min,int max)
         {
@@ -41,9 +41,16 @@ namespace pixellab
             chkEnable.Checked = true;
             chkEnable.ForeColor = Color.White;
             chkEnable.Location =new Point(185, 32);
-            track.Scroll += (s, e) =>
+            // track.Scroll += (s, e) =>
+            // {
+            //     lblValue.Text =track.Value.ToString();
+            // };
+            chkEnable.CheckedChanged += (s, e) =>
             {
-                lblValue.Text =track.Value.ToString();
+                track.Enabled = chkEnable.Checked;
+                // اختياري: تغيير لون النص ليوحي بالتعطيل
+                lblValue.ForeColor = chkEnable.Checked ? Color.LightGray : Color.Gray;
+                lblName.ForeColor = chkEnable.Checked ? Color.White : Color.Gray;
             };
             this.Controls.Add(lblName);
             this.Controls.Add(lblValue);
@@ -63,6 +70,7 @@ namespace pixellab
             {
                 var slider = new ChannelControl(channel.Name, channel.Min, channel.Max);
                 slider.track.Scroll += onValueChanged;
+                slider.chkEnable.CheckedChanged += onValueChanged;
                 panel.Controls.Add(slider);
             }
         }
@@ -74,6 +82,7 @@ namespace pixellab
             {
                 if (control is ChannelControl slider && slider.lblName.Text == sliderName)
                 {
+                    if (!slider.IsChannelEnabled) return 0;
                     return slider.track.Value;
                 }
             }

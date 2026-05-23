@@ -13,6 +13,8 @@ namespace pixellab
         private Button btnopen;
         private Button btnsave;
         private Button btnReset;
+        private TextBox NumberOfColors;
+        private Panel panelResetRow;
         private Button btnGray;
         private Button btnQuantize;
         private Button btn;
@@ -63,6 +65,8 @@ namespace pixellab
             this.btnopen = new Button();
             this.btnsave = new Button();
             this.btnReset = new Button();
+            this.NumberOfColors = new TextBox();
+            this.panelResetRow = new Panel();
 
             this.btnGray = new Button();
             this.btnQuantize = new Button();
@@ -131,7 +135,7 @@ namespace pixellab
 
             this.panelSidebar.Dock = DockStyle.Left;
             this.panelSidebar.Width = 220;
-            this.panelSidebar.BackColor =Color.FromArgb(24, 24, 24);
+            this.panelSidebar.BackColor = Color.FromArgb(24, 24, 24);
 
             // =====================================================
             // FLOW SIDEBAR
@@ -139,15 +143,15 @@ namespace pixellab
 
             this.flowSidebar.Dock = DockStyle.Fill;
 
-            this.flowSidebar.FlowDirection =FlowDirection.TopDown;
+            this.flowSidebar.FlowDirection = FlowDirection.TopDown;
 
             this.flowSidebar.WrapContents = false;
 
             this.flowSidebar.AutoScroll = true;
 
-            this.flowSidebar.Padding =new Padding(15);
+            this.flowSidebar.Padding = new Padding(15);
 
-            this.flowSidebar.BackColor =Color.FromArgb(24, 24, 24);
+            this.flowSidebar.BackColor = Color.FromArgb(24, 24, 24);
 
             // =====================================================
             // TOP PANEL
@@ -157,7 +161,7 @@ namespace pixellab
 
             this.panelTop.Height = 55;
 
-            this.panelTop.BackColor =Color.FromArgb(30, 30, 30);
+            this.panelTop.BackColor = Color.FromArgb(30, 30, 30);
 
             // =====================================================
             // MAIN PANEL
@@ -165,45 +169,45 @@ namespace pixellab
 
             this.panelMain.Dock = DockStyle.Fill;
 
-            this.panelMain.BackColor =Color.FromArgb(18, 18, 18);
+            this.panelMain.BackColor = Color.FromArgb(18, 18, 18);
 
-            this.panelMain.Padding =new Padding(15);
+            this.panelMain.Padding = new Padding(15);
 
             // =====================================================
             // INSPECTOR
             // =====================================================
 
-            this.panelInspector.Dock =DockStyle.Right;
+            this.panelInspector.Dock = DockStyle.Right;
 
             this.panelInspector.Width = 300;
 
-            this.panelInspector.BackColor =Color.FromArgb(24, 24, 24);
+            this.panelInspector.BackColor = Color.FromArgb(24, 24, 24);
 
-            this.panelInspector.Padding =new Padding(15);
+            this.panelInspector.Padding = new Padding(15);
 
             // =====================================================
             // IMAGE CONTAINER
             // =====================================================
 
-            this.panelImageContainer.Dock =DockStyle.Fill;
+            this.panelImageContainer.Dock = DockStyle.Fill;
 
-            this.panelImageContainer.Padding =new Padding(10);
+            this.panelImageContainer.Padding = new Padding(10);
 
-            this.panelImageContainer.BackColor =Color.FromArgb(18, 18, 18);
+            this.panelImageContainer.BackColor = Color.FromArgb(18, 18, 18);
 
             // =====================================================
             // PICTUREBOX
             // =====================================================
 
-            this.pictureBox1.Dock =DockStyle.Fill;
+            this.pictureBox1.Dock = DockStyle.Fill;
 
-            this.pictureBox1.SizeMode =PictureBoxSizeMode.Zoom;
+            this.pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
 
-            this.pictureBox1.BackColor =Color.FromArgb(22, 22, 22);
+            this.pictureBox1.BackColor = Color.FromArgb(22, 22, 22);
 
-            this.pictureBox1.BorderStyle =BorderStyle.None;
+            this.pictureBox1.BorderStyle = BorderStyle.None;
 
-            this.pictureBox1.MouseClick +=new MouseEventHandler(this.pictureBox1_MouseClick);
+            this.pictureBox1.MouseClick += new MouseEventHandler(this.pictureBox1_MouseClick);
 
             // =====================================================
             // LOGO
@@ -263,7 +267,13 @@ namespace pixellab
                 lbl.Margin =
                     new Padding(0, 15, 0, 10);
             }
-
+            //
+            //PanelReset
+            //
+            this.panelResetRow.Width = 185;
+            this.panelResetRow.Height = 36;
+            this.panelResetRow.BackColor = Color.Transparent;
+            this.panelResetRow.Margin = new Padding(0, 0, 0, 10);
             // =====================================================
             // BUTTONS
             // =====================================================
@@ -272,7 +282,6 @@ namespace pixellab
             {
                 btnopen,
                 btnsave,
-                btnReset,
                 btn,
                 btnGray,
                 btnQuantize
@@ -300,6 +309,30 @@ namespace pixellab
                 b.Margin =
                     new Padding(0, 0, 0, 10);
             }
+            this.btnReset.Width = 40;
+            this.btnReset.Height = 36;
+            this.btnReset.FlatStyle = FlatStyle.Flat;
+            this.btnReset.FlatAppearance.BorderSize = 0;
+            this.btnReset.BackColor = Color.FromArgb(40, 40, 45);
+            this.btnReset.ForeColor = Color.White;
+            this.btnReset.Font = new Font("Segoe UI", 9, FontStyle.Bold);
+
+            this.btnReset.Dock = DockStyle.Left;
+
+            this.NumberOfColors.Dock = DockStyle.Fill;
+
+            this.panelResetRow.Height = 36;
+
+            this.NumberOfColors.BackColor = Color.FromArgb(40, 40, 45);
+
+            this.NumberOfColors.ForeColor = Color.White;
+
+            this.NumberOfColors.BorderStyle = BorderStyle.FixedSingle;
+
+            this.NumberOfColors.Font = new Font("Segoe UI", 10);
+
+            this.NumberOfColors.Text = "";
+            this.NumberOfColors.Margin = new Padding(5, 0, 0, 0);
 
             // =====================================================
             // BUTTON TEXT
@@ -367,7 +400,7 @@ namespace pixellab
             // =====================================================
 
             this.lblInfo.Size =
-                new Size(185, 70);
+                new Size(230, 70);
 
             this.lblInfo.ForeColor =
                 Color.Gainsboro;
@@ -535,7 +568,9 @@ namespace pixellab
 
             this.flowSidebar.Controls.Add(this.btnopen);
             this.flowSidebar.Controls.Add(this.btnsave);
-            this.flowSidebar.Controls.Add(this.btnReset);
+            this.panelResetRow.Controls.Add(this.NumberOfColors);
+            this.panelResetRow.Controls.Add(this.btnReset);
+            this.flowSidebar.Controls.Add(this.panelResetRow);
 
             this.flowSidebar.Controls.Add(this.lblFiltersSection);
 
