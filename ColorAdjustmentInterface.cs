@@ -48,7 +48,6 @@ namespace pixellab
             chkEnable.CheckedChanged += (s, e) =>
             {
                 track.Enabled = chkEnable.Checked;
-                // اختياري: تغيير لون النص ليوحي بالتعطيل
                 lblValue.ForeColor = chkEnable.Checked ? Color.LightGray : Color.Gray;
                 lblName.ForeColor = chkEnable.Checked ? Color.White : Color.Gray;
             };

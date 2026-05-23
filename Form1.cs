@@ -242,9 +242,15 @@ namespace pixellab
             if (!HasImage()) return;
             
             Button btn = (Button)sender;
+            
             try
             {
-                if (!isQuantizeActive)
+                if (string.IsNullOrWhiteSpace(NumberOfColors.Text))
+                {
+                    isQuantizeActive = false;
+                    btn.BackColor = Color.FromArgb(45, 45, 48);
+                }
+                else
                 {
                     if (!int.TryParse(NumberOfColors.Text, out int myLevels) || myLevels < 3 || myLevels > 255)
                     {
@@ -254,11 +260,6 @@ namespace pixellab
 
                     isQuantizeActive = true;
                     btn.BackColor = Color.FromArgb(0, 122, 204);
-                }
-                else
-                {
-                    isQuantizeActive = false;
-                    btn.BackColor = Color.FromArgb(45, 45, 48);
                 }
 
                 livePreviewTimer.Stop();
@@ -327,7 +328,6 @@ namespace pixellab
                 else if (selectedShortName == "YUV") fullName = "YUV Space";
                 else if (selectedShortName == "YCbCr") fullName = "YCbCr Space";
 
-                // نغير التحديد داخل الـ ListBox الخاص بفورم الـ 3D مباشرة
                 _spaceForm.listSystems.SelectedItem = fullName;
             }
         }

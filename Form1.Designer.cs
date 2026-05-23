@@ -13,7 +13,7 @@ namespace pixellab
         private Button btnopen;
         private Button btnsave;
         private Button btnReset;
-        private TextBox NumberOfColors;
+        public TextBox NumberOfColors;
         private Panel panelResetRow;
         private Button btnGray;
         private Button btnQuantize;
@@ -42,7 +42,7 @@ namespace pixellab
 
         private FlowLayoutPanel flowSidebar;
         private FlowLayoutPanel flowColorControls;
-        public System.Windows.Forms.TextBox NumberOfColors;
+        // public System.Windows.Forms.TextBox NumberOfColors;
         private ComboBox cmbColorSpaces;
         private Panel panelCube;
 
@@ -282,9 +282,10 @@ namespace pixellab
             {
                 btnopen,
                 btnsave,
+                btnReset,
                 btn,
-                btnGray,
-                btnQuantize
+                btnGray
+                
             };
 
             foreach (Button b in buttons)
@@ -309,15 +310,15 @@ namespace pixellab
                 b.Margin =
                     new Padding(0, 0, 0, 10);
             }
-            this.btnReset.Width = 40;
-            this.btnReset.Height = 36;
-            this.btnReset.FlatStyle = FlatStyle.Flat;
-            this.btnReset.FlatAppearance.BorderSize = 0;
-            this.btnReset.BackColor = Color.FromArgb(40, 40, 45);
-            this.btnReset.ForeColor = Color.White;
-            this.btnReset.Font = new Font("Segoe UI", 9, FontStyle.Bold);
+            this.btnQuantize.Width = 40;
+            this.btnQuantize.Height = 36;
+            this.btnQuantize.FlatStyle = FlatStyle.Flat;
+            this.btnQuantize.FlatAppearance.BorderSize = 0;
+            this.btnQuantize.BackColor = Color.FromArgb(40, 40, 45);
+            this.btnQuantize.ForeColor = Color.White;
+            this.btnQuantize.Font = new Font("Segoe UI", 9, FontStyle.Bold);
 
-            this.btnReset.Dock = DockStyle.Left;
+            this.btnQuantize.Dock = DockStyle.Left;
 
             this.NumberOfColors.Dock = DockStyle.Fill;
 
@@ -400,7 +401,7 @@ namespace pixellab
             // =====================================================
 
             this.lblInfo.Size =
-                new Size(230, 70);
+                new Size(230, 100);
 
             this.lblInfo.ForeColor =
                 Color.Gainsboro;
@@ -568,16 +569,17 @@ namespace pixellab
 
             this.flowSidebar.Controls.Add(this.btnopen);
             this.flowSidebar.Controls.Add(this.btnsave);
-            this.panelResetRow.Controls.Add(this.NumberOfColors);
-            this.panelResetRow.Controls.Add(this.btnReset);
-            this.flowSidebar.Controls.Add(this.panelResetRow);
+            
+            this.flowSidebar.Controls.Add(this.btnReset);
+            
 
             this.flowSidebar.Controls.Add(this.lblFiltersSection);
 
             this.flowSidebar.Controls.Add(this.btn);
             this.flowSidebar.Controls.Add(this.btnGray);
-            this.flowSidebar.Controls.Add(this.btnQuantize);
-
+            this.panelResetRow.Controls.Add(this.NumberOfColors);
+            this.panelResetRow.Controls.Add(this.btnQuantize);
+            this.flowSidebar.Controls.Add(this.panelResetRow);
             this.flowSidebar.Controls.Add(this.lblInfo);
 
             this.flowSidebar.Controls.Add(this.panelColorCard);
