@@ -190,14 +190,33 @@ namespace pixellab
         }       
         private void btnsave_Click(object sender, EventArgs e)
         {
-            if (!HasImage()) return;
+            if (pictureBox1.Image == null) return;
 
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Filter = "PNG|*.png|JPEG|*.jpg|Bitmap|*.bmp";
 
             if (sfd.ShowDialog() == DialogResult.OK)
             {
-                currentImage.Save(sfd.FileName);
+                try
+                {
+                    using (Bitmap imageToSave = new Bitmap(pictureBox1.Image))
+                    {
+                        string extension = Path.GetExtension(sfd.FileName).ToLower();
+                        System.Drawing.Imaging.ImageFormat format = System.Drawing.Imaging.ImageFormat.Png;
+
+                        if (extension == ".jpg" || extension == ".jpeg")
+                            format = System.Drawing.Imaging.ImageFormat.Jpeg;
+                        else if (extension == ".bmp")
+                            format = System.Drawing.Imaging.ImageFormat.Bmp;
+
+                        imageToSave.Save(sfd.FileName, format);
+                    }
+                    MessageBox.Show("تم حفظ الصورة بنجاح مع كافة التعديلات!", "نجاح العملية", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("حدث خطأ أثناء حفظ الصورة: " + ex.Message, "خطأ في الحفظ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
         private void btnOpen3DLab_Click(object sender, EventArgs e)

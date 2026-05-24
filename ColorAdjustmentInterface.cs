@@ -41,10 +41,10 @@ namespace pixellab
             chkEnable.Checked = true;
             chkEnable.ForeColor = Color.White;
             chkEnable.Location =new Point(185, 32);
-            // track.Scroll += (s, e) =>
-            // {
-            //     lblValue.Text =track.Value.ToString();
-            // };
+            track.Scroll += (s, e) =>
+            {
+                lblValue.Text =track.Value.ToString();
+            };
             chkEnable.CheckedChanged += (s, e) =>
             {
                 track.Enabled = chkEnable.Checked;
