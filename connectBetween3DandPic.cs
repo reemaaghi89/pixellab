@@ -15,11 +15,7 @@ namespace pixellab
         {
             _panel = panel;
         }
-//////////////////////////////////////////////////////////////////////////
-/// This method reads the current slider values and calculates the 
-/// corresponding RGB color based on the active color space.
-///  This allows the 3D color picker to reflect changes made in any
-///  color space, ensuring synchronization across all systems.    
+ 
         public Color GetColorFromSliders(string currentColorSpace)
         {
             Color calculatedColor = Color.White;
@@ -128,7 +124,6 @@ namespace pixellab
             }
         }
 
-        // التابع المساعد الذي يلف على السلايدرات
         private void UpdateSingleSlider(string name, int value)
         {
             Console.WriteLine($"Trying to update {name} to {value}");

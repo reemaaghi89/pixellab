@@ -79,7 +79,72 @@ namespace pixellab
             bmp.UnlockBits(dstData);
             return bmp;
         }
+        public static unsafe Bitmap QuantizeImageColorsIndexed(Bitmap source, int levels)
+        {
+            if (levels < 2) levels = 2;
+            if (levels > 256) levels = 256;
 
+            int width = source.Width;
+            int height = source.Height;
+
+            Bitmap indexedBmp = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
+
+            ColorPalette palette = indexedBmp.Palette;
+            float step = 255.0f / (levels - 1);
+            for (int i = 0; i < palette.Entries.Length; i++)
+            {
+                int r = (int)Math.Round(((i >> 5) & 7) * 255.0 / 7.0);
+                int g = (int)Math.Round(((i >> 2) & 7) * 255.0 / 7.0);
+                int b = (int)Math.Round((i & 3) * 255.0 / 3.0);
+
+                r = (int)Math.Round(r / step) * (int)step;
+                g = (int)Math.Round(g / step) * (int)step;
+                b = (int)Math.Round(b / step) * (int)step;
+
+                palette.Entries[i] = Color.FromArgb(
+                    Math.Clamp(r, 0, 255),
+                    Math.Clamp(g, 0, 255),
+                    Math.Clamp(b, 0, 255)
+                );
+            }
+            indexedBmp.Palette = palette;
+
+            BitmapData srcData = source.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+            BitmapData dstData = indexedBmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
+
+            byte* srcPtr = (byte*)srcData.Scan0;
+            byte* dstPtr = (byte*)dstData.Scan0;
+
+            int srcStride = srcData.Stride;
+            int dstStride = dstData.Stride;
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int srcIndex = (y * srcStride) + (x * 4);
+                    
+                    byte b = srcPtr[srcIndex];
+                    byte g = srcPtr[srcIndex + 1];
+                    byte r = srcPtr[srcIndex + 2];
+
+                    int quantizedR = (int)Math.Round(r / step) * (int)step;
+                    int quantizedG = (int)Math.Round(g / step) * (int)step;
+                    int quantizedB = (int)Math.Round(b / step) * (int)step;
+                    byte colorIndex = (byte)((((quantizedR * 7 / 255) & 7) << 5) |
+                                            (((quantizedG * 7 / 255) & 7) << 2) |
+                                            ((quantizedB * 3 / 255) & 3));
+
+                    int dstIndex = (y * dstStride) + x;
+                    dstPtr[dstIndex] = colorIndex;
+                }
+            }
+
+            source.UnlockBits(srcData);
+            indexedBmp.UnlockBits(dstData);
+
+            return indexedBmp;
+        }
         public static unsafe Bitmap ApplyRGBFast(Bitmap source, int r, int g, int b)
         {
             Bitmap bmp = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppRgb);

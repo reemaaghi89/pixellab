@@ -20,7 +20,6 @@ namespace pixellab.Renderers
             double rX = x * cosY + rZ * sinY;
             double depthZ = -x * sinY + rZ * cosY;
 
-            // إسقاط المنظور على الشاشة مع عامل التكبير
             float screenX = (float)(cx + rX * 2.5 * zoom);
             float screenY = (float)(cy - rY * 2.5 * zoom);
 
@@ -39,28 +38,25 @@ namespace pixellab.Renderers
             int cx = width / 2;
             int cy = height / 2;
 
-            // تحديد قيم الـ RGB الأساسية للرؤوس الثمانية للمكعب لتمريرها عبر مصفوفة التحويل
             double[,] rgbVertices = {
-                {0, 0, 0},       // 0: الأسود
-                {255, 0, 0},     // 1: الأحمر
-                {255, 255, 0},   // 2: الأصفر
-                {0, 255, 0},     // 3: الأخضر
-                {0, 0, 255},     // 4: الأزرق
-                {255, 0, 255},   // 5: الماجنتا
-                {255, 255, 255}, // 6: الأبيض
-                {0, 255, 255}    // 7: السيان
+                {0, 0, 0},       
+                {255, 0, 0},    
+                {255, 255, 0},   
+                {0, 255, 0},     
+                {0, 0, 255},     
+                {255, 0, 255},   
+                {255, 255, 255},
+                {0, 255, 255}    
             };
 
             double[,] vertices = new double[8, 3];
             PointF[] pts = new PointF[8];
             double[] vertexDepths = new double[8];
 
-            // تحويل كل رأس من فضاء RGB إلى YCbCr خطياً وتوسيطه داخل نطاق الرسم [-50, 50]
             for (int i = 0; i < 8; i++)
             {
                 var ycbcr = RgbToYCbCr(rgbVertices[i, 0], rgbVertices[i, 1], rgbVertices[i, 2]);
                 
-                // توزيع المحاور: X = Cb (التباين الأزرق)، Y = Y (السطوع العمودي)، Z = Cr (التباين الأحمر)
                 vertices[i, 0] = ((ycbcr.Cb / 255.0) * 100.0) - 50.0;
                 vertices[i, 1] = ((ycbcr.Y / 255.0) * 100.0) - 50.0;
                 vertices[i, 2] = ((ycbcr.Cr / 255.0) * 100.0) - 50.0;
@@ -71,12 +67,12 @@ namespace pixellab.Renderers
             }
 
             int[][] faces = {
-                new int[] {0, 1, 2, 3}, // الخلفي
-                new int[] {4, 5, 6, 7}, // الأمامي
-                new int[] {0, 1, 5, 4}, // السفلي
-                new int[] {2, 3, 7, 6}, // العلوي
-                new int[] {0, 3, 7, 4}, // الأيسر
-                new int[] {1, 2, 6, 5}  // الأيمن
+                new int[] {0, 1, 2, 3}, 
+                new int[] {4, 5, 6, 7}, 
+                new int[] {0, 1, 5, 4}, 
+                new int[] {2, 3, 7, 6}, 
+                new int[] {0, 3, 7, 4}, 
+                new int[] {1, 2, 6, 5}  
             };
 
             Color[][] faceGradientColors = {
@@ -88,7 +84,6 @@ namespace pixellab.Renderers
                 new Color[] { Color.Red, Color.Yellow, Color.White, Color.Magenta }    
             };
 
-            // ترتيب الأوجه حسب العمق (Painter's Algorithm) لمنع التداخل غير المتناسق للمجسم المائل
             List<int> faceIndices = new List<int> { 0, 1, 2, 3, 4, 5 };
             faceIndices.Sort((a, b) => {
                 double depthA = (vertexDepths[faces[a][0]] + vertexDepths[faces[a][1]] + vertexDepths[faces[a][2]] + vertexDepths[faces[a][3]]) / 4.0;
@@ -121,7 +116,6 @@ namespace pixellab.Renderers
                 }
             }
 
-            // تحديد وحساب إحداثيات كرة المؤشر اللحظية للون المختار حالياً
             var selYCbCr = RgbToYCbCr(selectedColor.R, selectedColor.G, selectedColor.B);
             double pX = ((selYCbCr.Cb / 255.0) * 100.0) - 50.0;
             double pY = ((selYCbCr.Y / 255.0) * 100.0) - 50.0;
@@ -133,7 +127,6 @@ namespace pixellab.Renderers
             using (Pen goldPen = new Pen(Color.Gold, 2f)) g.DrawEllipse(goldPen, targetPt.X - 9, targetPt.Y - 9, 18, 18);
         }
 
-        // دالة التقاط اللون المتقدمة للمجسم المائل والمشوه
         public static Color GetColorAtPointDirect(Point mousePt, int width, int height, double angleX, double angleY, float zoom)
         {
             int cx = width / 2;
@@ -172,7 +165,6 @@ namespace pixellab.Renderers
                 return depthA.CompareTo(depthB);
             });
 
-            // فحص الأوجه المائلة تصاعدياً من الأقرب إلى عين الكاميرا
             for (int j = faceIndices.Count - 1; j >= 0; j--)
             {
                 int i = faceIndices[j];
@@ -195,17 +187,14 @@ namespace pixellab.Renderers
                             { vertices[faces[i][3], 0], vertices[faces[i][3], 1], vertices[faces[i][3], 2] }
                         };
 
-                        // استيفاء حركي للإحداثيات ثلاثية الأبعاد المشوهة داخل فضاء الرسم
                         double x3D = (1 - u) * ((1 - v) * faceVerts3D[0, 0] + v * faceVerts3D[3, 0]) + u * ((1 - v) * faceVerts3D[1, 0] + v * faceVerts3D[2, 0]);
                         double y3D = (1 - u) * ((1 - v) * faceVerts3D[0, 1] + v * faceVerts3D[3, 1]) + u * ((1 - v) * faceVerts3D[1, 1] + v * faceVerts3D[2, 1]);
                         double z3D = (1 - u) * ((1 - v) * faceVerts3D[0, 2] + v * faceVerts3D[3, 2]) + u * ((1 - v) * faceVerts3D[1, 2] + v * faceVerts3D[2, 2]);
 
-                        // إعادة الإحداثيات إلى قيم نظام YCbCr الأصلي [0, 255]
                         double cb = ((x3D + 50.0) / 100.0) * 255.0;
                         double y    = ((y3D + 50.0) / 100.0) * 255.0;
                         double cr = ((z3D + 50.0) / 100.0) * 255.0;
 
-                        // استدعاء التحويل العكسي للمصفوفة للحصول على اللون الحقيقي المشتق وإرساله للواجهة
                         return YCbCrToRgb(y, cb, cr);
                     }
                 }
@@ -233,7 +222,6 @@ namespace pixellab.Renderers
             return den == 0 ? 0 : num / den;
         }
 
-        // التابع المساعد للتحويل الخطي الأكاديمي القياسي (ITU-R BT.601)
         private static (double Y, double Cb, double Cr) RgbToYCbCr(double r, double g, double b)
         {
             double y = 0.299 * r + 0.587 * g + 0.114 * b;
@@ -242,7 +230,6 @@ namespace pixellab.Renderers
             return (y, cb, cr);
         }
 
-        // التابع المساعد العكسي لإعادة قيم التباين إلى فضاء العرض اللوني RGB المباشر
         private static Color YCbCrToRgb(double y, double cb, double cr)
         {
             double r = y + 1.402 * (cr - 128.0);

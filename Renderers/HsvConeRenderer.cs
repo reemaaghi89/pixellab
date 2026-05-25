@@ -7,7 +7,7 @@ namespace pixellab.Renderers
 {
     public static class HsvConeRenderer
     {
-        private const int Segments = 36; // عدد التقسيمات الدائرية لضمان نعومة المخروط
+        private const int Segments = 36; 
 
         private static (PointF Point, double ZDepth) ProjectWithDepth(double x, double y, double z, int cx, int cy, double angleX, double angleY, float zoom)
         {
@@ -17,13 +17,11 @@ namespace pixellab.Renderers
             double cosX = Math.Cos(radX), sinX = Math.Sin(radX);
             double cosY = Math.Cos(radY), sinY = Math.Sin(radY);
 
-            // تدوير ثلاثي الأبعاد حول المحاور
             double rY = y * cosX - z * sinX;
             double rZ = y * sinX + z * cosX;
             double rX = x * cosY + rZ * sinY;
             double depthZ = -x * sinY + rZ * cosY;
 
-            // إسقاط المنظور على الشاشة
             float screenX = (float)(cx + rX * 2.5 * zoom);
             float screenY = (float)(cy - rY * 2.5 * zoom);
 
@@ -42,13 +40,10 @@ namespace pixellab.Renderers
             int cx = width / 2;
             int cy = height / 2;
 
-            // توليد نقاط المخروط ثلاثية الأبعاد
-            // الرأس 0: أسفل المخروط (الأسود المطلق)
-            // الرأس 1: مركز الدائرة العلوية (الأبيض المطلق)
-            // النقاط من 2 إلى 2+Segments-1: محيط الدائرة العلوية الملونة
+          
             double[,] vertices = new double[2 + Segments, 3];
-            vertices[0, 0] = 0;  vertices[0, 1] = -50; vertices[0, 2] = 0;  // Apex (Black)
-            vertices[1, 0] = 0;  vertices[1, 1] = 50;  vertices[1, 2] = 0;  // Top Center (White)
+            vertices[0, 0] = 0;  vertices[0, 1] = -50; vertices[0, 2] = 0;  
+            vertices[1, 0] = 0;  vertices[1, 1] = 50;  vertices[1, 2] = 0; 
 
             Color[] vertexColors = new Color[2 + Segments];
             vertexColors[0] = Color.Black;
@@ -59,16 +54,13 @@ namespace pixellab.Renderers
                 double angleDeg = i * (360.0 / Segments);
                 double rad = angleDeg * Math.PI / 180.0;
 
-                // إحداثيات الدائرة العلوية (نصف القطر 50 والارتفاع العمودي 50)
                 vertices[2 + i, 0] = 50 * Math.Cos(rad);
                 vertices[2 + i, 1] = 50;
                 vertices[2 + i, 2] = 50 * Math.Sin(rad);
 
-                // ألوان المحيط المشبعة بالكامل عند السطوع الأعلى
                 vertexColors[2 + i] = HsvToRgb(angleDeg, 1.0, 1.0);
             }
 
-            // إسقاط جميع النقاط هندسياً وحفظ العمق
             PointF[] pts = new PointF[2 + Segments];
             double[] vertexDepths = new double[2 + Segments];
 
@@ -79,20 +71,17 @@ namespace pixellab.Renderers
                 vertexDepths[i] = projection.ZDepth;
             }
 
-            // بناء الأوجه (الجانبية والعلوية)
             List<ConeFace> faces = new List<ConeFace>();
             for (int i = 0; i < Segments; i++)
             {
                 int next = (i + 1) % Segments;
 
-                // 1. الوجه الجانبي (مثلث يربط الرأس السفلي بالمحيط)
                 faces.Add(new ConeFace
                 {
                     V0 = 0, V1 = 2 + i, V2 = 2 + next,
                     AverageDepth = (vertexDepths[0] + vertexDepths[2 + i] + vertexDepths[2 + next]) / 3.0
                 });
 
-                // 2. الوجه العلوي (مثلث يربط المركز العلوي بالمحيط)
                 faces.Add(new ConeFace
                 {
                     V0 = 1, V1 = 2 + i, V2 = 2 + next,
@@ -100,10 +89,8 @@ namespace pixellab.Renderers
                 });
             }
 
-            // فرز الأوجه حسب العمق للحماية من عيوب التداخل الظلي
             faces.Sort((a, b) => a.AverageDepth.CompareTo(b.AverageDepth));
 
-            // رسم الأوجه المتداخلة من الأبعد إلى الأقرب
             foreach (var face in faces)
             {
                 PointF[] facePoints = { pts[face.V0], pts[face.V1], pts[face.V2] };
@@ -124,29 +111,25 @@ namespace pixellab.Renderers
                     }
                 }
 
-                // رسم خطوط هيكلية خفيفة جداً لإبراز البناء الأسطواني للمخروط
                 using (Pen p = new Pen(Color.FromArgb(25, Color.White), 1f))
                 {
                     g.DrawPolygon(p, facePoints);
                 }
             }
 
-            // حساب موقع كرة الإشارة الذهبية المنزلقة للون المختار حالياً
             ColorToHsv(selectedColor, out double h, out double s, out double v);
             double pY = (v * 100.0) - 50.0;
-            double currentRadius = s * v * 50.0; // يتقلص نصف القطر كلما اتجهنا لأسفل المخروط
+            double currentRadius = s * v * 50.0; 
             double radH = h * Math.PI / 180.0;
             double pX = currentRadius * Math.Cos(radH);
             double pZ = currentRadius * Math.Sin(radH);
 
             PointF targetPt = Project(pX, pY, pZ, cx, cy, angleX, angleY, zoom);
 
-            // رسم مؤشر الطوق اللوني المشع للـ HSV
             using (Brush b = new SolidBrush(selectedColor)) g.FillEllipse(b, targetPt.X - 7, targetPt.Y - 7, 14, 14);
             using (Pen goldPen = new Pen(Color.Gold, 2f)) g.DrawEllipse(goldPen, targetPt.X - 9, targetPt.Y - 9, 18, 18);
         }
 
-        // دالة الالتقاط المباشر والذكي للون من فوق الـ 3D Mesh للمخروط عبر الماوس
         public static Color GetColorAtPointDirect(Point mousePt, int width, int height, double angleX, double angleY, float zoom)
         {
             int cx = width / 2;
@@ -183,7 +166,6 @@ namespace pixellab.Renderers
                 faces.Add(new ConeFace { V0 = 1, V1 = 2 + i, V2 = 2 + next, AverageDepth = (vertexDepths[1] + vertexDepths[2 + i] + vertexDepths[2 + next]) / 3.0 });
             }
 
-            // الفرز للتأكد من فحص الأوجه الأقرب لعين الكاميرا أولاً
             faces.Sort((a, b) => a.AverageDepth.CompareTo(b.AverageDepth));
 
             for (int j = faces.Count - 1; j >= 0; j--)
@@ -197,15 +179,12 @@ namespace pixellab.Renderers
 
                     if (path.IsVisible(mousePt))
                     {
-                        // حساب إحداثيات التوضع الموزونة (Barycentric) للنقطة المسقطة داخل المثلث ثنائي الأبعاد
                         CalculateBilinearTriangleRatio(mousePt, p0, p1, p2, out double w0, out double w1, out double w2);
 
-                        // استيفاء الإحداثيات الـ 3D الحقيقية للمخروط بدقة مطلقة
                         double x3D = w0 * vertices[face.V0, 0] + w1 * vertices[face.V1, 0] + w2 * vertices[face.V2, 0];
                         double y3D = w0 * vertices[face.V0, 1] + w1 * vertices[face.V1, 1] + w2 * vertices[face.V2, 1];
                         double z3D = w0 * vertices[face.V0, 2] + w1 * vertices[face.V1, 2] + w2 * vertices[face.V2, 2];
 
-                        // تفكيك الإحداثيات ثلاثية الأبعاد وعكسها برمجياً إلى قيم فضاء HSV الأصلي
                         double v = (y3D + 50.0) / 100.0;
                         v = Math.Max(0.0, Math.Min(1.0, v));
 
@@ -224,7 +203,6 @@ namespace pixellab.Renderers
                             if (h < 0) h += 360.0;
                         }
 
-                        // تحويل الـ HSV المستنتج إلى كائن لون RGB لإرساله مجدداً إلى الـ Form الأساسي
                         return HsvToRgb(h, s, v);
                     }
                 }
@@ -233,7 +211,6 @@ namespace pixellab.Renderers
             return Color.Transparent;
         }
 
-        // تابع رياضي لحساب موازين المثلث الحركية عند النقر بالماوس
         private static void CalculateBilinearTriangleRatio(Point p, PointF a, PointF b, PointF c, out double w0, out double w1, out double w2)
         {
             double denominator = (b.Y - c.Y) * (a.X - c.X) + (c.X - b.X) * (a.Y - c.Y);
@@ -248,7 +225,6 @@ namespace pixellab.Renderers
             w2 = 1.0 - w0 - w1;
         }
 
-        // محول رياضيات الألوان المساعد من نظام HSV إلى نظام RGB المعتمد شاشاتياً
         private static Color HsvToRgb(double h, double s, double v)
         {
             double r = 0, g = 0, b = 0;

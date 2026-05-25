@@ -45,7 +45,7 @@ namespace pixellab
         }
         private void InitializeComponentLayout()
         {
-            this.Text = "مختبر الفضاءات اللونية التفاعلي ثلاثي الأبعاد - 3D Color Spaces Lab";
+            this.Text = "3D Color Spaces Lab";
             this.Size = new Size(1150, 780); 
             this.MinimumSize = new Size(800, 600); 
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -135,10 +135,7 @@ namespace pixellab
 
             selectedSystem = listSystems.SelectedItem.ToString();
             panel3D.Invalidate(); 
-            // if (selectedSystem.Contains("Lab") || selectedSystem.Contains("LAB"))
-            // {
-            //     MessageBox.Show($"تم الضغط على نظام الـ Lab بنجاح!\nالاسم المكتوب في الـ ListBox هو: \"{selectedSystem}\"");
-            // }
+          
 
             if (this.Owner is Form1 mainForm)
             {
@@ -221,10 +218,8 @@ namespace pixellab
                     UpdateSyncReport(localSelectedColor); 
                     panel3D.Invalidate(); 
 
-                    // التعديل هنا: نتحقق من الـ Owner المباشر للفورم
                     if (this.Owner is Form1 mainForm)
                     {
-                        // إرسال اللون لتابع التحديث في Form1
                         mainForm.UpdateSlidersFrom3D(pickedColor, selectedSystem);
                     }
 

@@ -2,13 +2,12 @@ using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Collections.Generic;
-using pixellab.Converters; // استدعاء الـ Converter المعتمد عندك
+using pixellab.Converters;
 
 namespace pixellab.Renderers
 {
     public static class YuvSpaceRenderer
     {
-        // عامل تحجيم موحد لإظهار المط الهندسي الحقيقي بدون تصفير الأبعاد
         private const double SpaceScale = 0.35; 
 
         private static (PointF Point, double ZDepth) ProjectWithDepth(double x, double y, double z, int cx, int cy, double angleX, double angleY, float zoom)
@@ -43,14 +42,14 @@ namespace pixellab.Renderers
             int cy = height / 2;
 
             double[,] rgbVertices = {
-                {0, 0, 0},       // 0: الأسود
-                {255, 0, 0},     // 1: الأحمر
-                {255, 255, 0},   // 2: الأصفر
-                {0, 255, 0},     // 3: الأخضر
-                {0, 0, 255},     // 4: الأزرق
-                {255, 0, 255},   // 5: الماجنتا
-                {255, 255, 255}, // 6: الأبيض
-                {0, 255, 255}    // 7: السيان
+                {0, 0, 0},      
+                {255, 0, 0},    
+                {255, 255, 0},  
+                {0, 255, 0},    
+                {0, 0, 255},     
+                {255, 0, 255},  
+                {255, 255, 255}, 
+                {0, 255, 255}   
             };
 
             double[,] vertices = new double[8, 3];
@@ -61,12 +60,10 @@ namespace pixellab.Renderers
             {
                 Color rgbColor = Color.FromArgb((int)rgbVertices[i, 0], (int)rgbVertices[i, 1], (int)rgbVertices[i, 2]);
                 
-                // استخدام الـ Converter الأصلي الخاص بك
                 var (y, u, v) = YuvConverter.FromRgb(rgbColor);
                 
-                // هندسة المجسم المائل الحقيقي بناءً على الإحداثيات المستخرجة
                 vertices[i, 0] = u * SpaceScale;
-                vertices[i, 1] = (y - 127.5) * SpaceScale; // السطوع موسط عمودياً
+                vertices[i, 1] = (y - 127.5) * SpaceScale; 
                 vertices[i, 2] = v * SpaceScale;
 
                 var projection = ProjectWithDepth(vertices[i, 0], vertices[i, 1], vertices[i, 2], cx, cy, angleX, angleY, zoom);
@@ -75,12 +72,12 @@ namespace pixellab.Renderers
             }
 
             int[][] faces = {
-                new int[] {0, 1, 2, 3}, // الخلفي
-                new int[] {4, 5, 6, 7}, // الأمامي
-                new int[] {0, 1, 5, 4}, // السفلي
-                new int[] {2, 3, 7, 6}, // العلوي
-                new int[] {0, 3, 7, 4}, // الأيسر
-                new int[] {1, 2, 6, 5}  // الأيمن
+                new int[] {0, 1, 2, 3}, 
+                new int[] {4, 5, 6, 7}, 
+                new int[] {0, 1, 5, 4},
+                new int[] {2, 3, 7, 6}, 
+                new int[] {0, 3, 7, 4}, 
+                new int[] {1, 2, 6, 5}  
             };
 
             Color[][] faceGradientColors = {
@@ -124,7 +121,6 @@ namespace pixellab.Renderers
                 }
             }
 
-            // رسم النقطة الذهبية بناءً على تحويل الـ Converter لـ SelectedColor
             var (selY, selU, selV) = YuvConverter.FromRgb(selectedColor);
             double pX = selU * SpaceScale;
             double pY = (selY - 127.5) * SpaceScale;
@@ -202,7 +198,6 @@ namespace pixellab.Renderers
                         double y3D = (1 - uRatio) * ((1 - vRatio) * faceVerts3D[0, 1] + vRatio * faceVerts3D[3, 1]) + uRatio * ((1 - vRatio) * faceVerts3D[1, 1] + vRatio * faceVerts3D[2, 1]);
                         double z3D = (1 - uRatio) * ((1 - vRatio) * faceVerts3D[0, 2] + vRatio * faceVerts3D[3, 2]) + uRatio * ((1 - vRatio) * faceVerts3D[1, 2] + vRatio * faceVerts3D[2, 2]);
 
-                        // فك التغليف العكسي باستخدام الـ Scale ونقطة التوسيط
                         double finalU = x3D / SpaceScale;
                         double finalY = (y3D / SpaceScale) + 127.5;
                         double finalV = z3D / SpaceScale;

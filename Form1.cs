@@ -376,7 +376,7 @@ namespace pixellab
             {
                 if (int.TryParse(NumberOfColors.Text, out int myLevels) && myLevels >= 3 && myLevels <= 255)
                 {
-                    Bitmap temp = ImageProcessor.QuantizeImageColors(processedBmp, myLevels);
+                    Bitmap temp = ImageProcessor.QuantizeImageColorsIndexed(processedBmp, myLevels);
                     processedBmp.Dispose();
                     processedBmp = temp;
                 }
